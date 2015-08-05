@@ -9,18 +9,30 @@ import (
 )
 
 func main() {
-	client := soracom.NewClient()
-
 	email := os.Getenv("SORACOM_EMAIL")
 	password := os.Getenv("SORACOM_PASSWORD")
 
-	err := client.Auth(email, password)
+	if email == "" {
+		fmt.Println("SORACOM_EMAIL env var is required")
+		os.Exit(1)
+		return
+	}
+
+	if password == "" {
+		fmt.Println("SORACOM_PASSWORD env var is required")
+		os.Exit(1)
+		return
+	}
+
+	ac := soracom.NewApiClient()
+
+	err := ac.Auth(email, password)
 	if err != nil {
 		fmt.Printf("auth err: %v\n", err.Error())
 		return
 	}
 
-	subscribers, err := client.ListSubscribers()
+	subscribers, err := ac.ListSubscribers(nil)
 	if err != nil {
 		fmt.Printf("err: %v\n", err.Error())
 		return

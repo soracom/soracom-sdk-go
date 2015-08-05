@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
 
-type SoracomApiClient struct {
+type ApiClient struct {
 	httpClient *http.Client
 	Token      string
 }
@@ -21,10 +23,78 @@ type AuthRequestBody struct {
 	TokenTimeoutSeconds int    `json:"tokenTimeoutSeconds"`
 }
 
+func (arb *AuthRequestBody) Json() string {
+	bodyBytes, err := json.Marshal(arb)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
 type AuthResponseBody struct {
 	ApiKey     string
 	OperatorId string
 	Token      string
+}
+
+func ParseAuthResponse(resp *http.Response) *AuthResponseBody {
+	var arb AuthResponseBody
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&arb)
+	return &arb
+}
+
+type TagValueMatchMode int
+
+const (
+	MatchExact TagValueMatchMode = iota
+	MatchPrefix
+)
+
+func (m TagValueMatchMode) String() string {
+	switch m {
+	case MatchExact:
+		return "exact"
+	case MatchPrefix:
+		return "prefix"
+	}
+	return ""
+}
+
+type ListSubscribersOptions struct {
+	TagName           string
+	TagValue          string
+	TagValueMatchMode *TagValueMatchMode
+	StatusFilter      string
+	TypeFilter        string
+	Limit             int
+	LastEvaluatedKey  string
+}
+
+func (lso *ListSubscribersOptions) String() string {
+	var s = make([]string, 0, 10)
+	if lso.TagName != "" {
+		s = append(s, "tag_name="+lso.TagName)
+	}
+	if lso.TagValue != "" {
+		s = append(s, "tag_value="+lso.TagValue)
+	}
+	if lso.TagValueMatchMode != nil {
+		s = append(s, "tag_value_match_mode="+lso.TagValueMatchMode.String())
+	}
+	if lso.StatusFilter != "" {
+		s = append(s, "status_filter="+lso.StatusFilter)
+	}
+	if lso.TypeFilter != "" {
+		s = append(s, "type_filter="+lso.TypeFilter)
+	}
+	if lso.Limit != 0 {
+		s = append(s, "limit="+strconv.Itoa(lso.Limit))
+	}
+	if lso.LastEvaluatedKey != "" {
+		s = append(s, "last_evaluated_key="+lso.LastEvaluatedKey)
+	}
+	return strings.Join(s, "&")
 }
 
 type Subscriber struct {
@@ -37,6 +107,40 @@ type Subscriber struct {
 	Status     string            `json:"status"`
 	SpeedClass string            `json:"type"`
 	Tags       map[string]string `json:"tags"`
+}
+
+type PaginationKeys struct {
+	Prev string
+	Next string
+}
+
+func ParseListSubscribersResponse(resp *http.Response) (subs []Subscriber, pk *PaginationKeys) {
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&subs)
+
+	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	if linkHeader == "" {
+		return
+	}
+
+	pk = &PaginationKeys{}
+	links := strings.Split(linkHeader, ",")
+	for _, link := range links {
+		s := strings.Split(link, ";")
+		url, err := url.Parse(strings.Trim(s[0], "<>"))
+		if err != nil {
+			continue
+		}
+		lek := url.Query()["last_evaluated_key"][0]
+		rel := strings.Split(s[1], "=")[1]
+		if rel == "prev" {
+			pk.Prev = lek
+		} else if rel == "next" {
+			pk.Next = lek
+		}
+	}
+
+	return
 }
 
 type ApiError struct {
@@ -53,6 +157,7 @@ type ApiErrorResponse struct {
 type apiParams struct {
 	method      string
 	path        string
+	query       string
 	contentType string
 	body        string
 }
@@ -96,21 +201,26 @@ func (ae *ApiError) Error() string {
 	return ae.Message
 }
 
-func NewClient() *SoracomApiClient {
+func NewApiClient() *ApiClient {
 	hc := new(http.Client)
-	return &SoracomApiClient{
+	return &ApiClient{
 		httpClient: hc,
 		Token:      "",
 	}
 }
 
-func (sac *SoracomApiClient) getEndpointBase() string {
+func (ac *ApiClient) getEndpointBase() string {
 	return "http://sora-prod.apigee.net"
 }
 
-func (sac *SoracomApiClient) callApi(params *apiParams) (*http.Response, error) {
-	url := sac.getEndpointBase() + params.path
-	req, err := http.NewRequest(params.method, url, strings.NewReader(params.body))
+func (ac *ApiClient) callApi(params *apiParams) (*http.Response, error) {
+	url := ac.getEndpointBase() + params.path
+	if params.query != "" {
+		url += "?" + params.query
+	}
+	fmt.Printf("url == %v\n", url)
+	req, err := http.NewRequest(
+		params.method, url, strings.NewReader(params.body))
 	if err != nil {
 		return nil, err
 	}
@@ -119,30 +229,25 @@ func (sac *SoracomApiClient) callApi(params *apiParams) (*http.Response, error) 
 		req.Header.Set("Content-Type", params.contentType)
 	}
 
-	req.Header.Set("X-Soracom-Token", sac.Token)
+	req.Header.Set("X-Soracom-Token", ac.Token)
 
-	return sac.httpClient.Do(req)
+	return ac.httpClient.Do(req)
 }
 
-func (sac *SoracomApiClient) Auth(email, password string) error {
+func (ac *ApiClient) Auth(email, password string) error {
 	body := &AuthRequestBody{
 		Email:               email,
 		Password:            password,
 		TokenTimeoutSeconds: 24 * 60 * 60,
 	}
-	bodyStr, err := json.Marshal(&body)
-	if err != nil {
-		return err
-	}
-
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/operators/auth",
 		contentType: "application/json",
-		body:        string(bodyStr),
+		body:        body.Json(),
 	}
 
-	resp, err := sac.callApi(params)
+	resp, err := ac.callApi(params)
 	if err != nil {
 		return err
 	}
@@ -152,31 +257,31 @@ func (sac *SoracomApiClient) Auth(email, password string) error {
 		return NewApiError(resp)
 	}
 
-	var respBody AuthResponseBody
-	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&respBody)
-	sac.Token = respBody.Token
+	respBody := ParseAuthResponse(resp)
+	ac.Token = respBody.Token
+
 	return nil
 }
 
-func (sac *SoracomApiClient) ListSubscribers() ([]Subscriber, error) {
+func (ac *ApiClient) ListSubscribers(options *ListSubscribersOptions) ([]Subscriber, *PaginationKeys, error) {
 	params := &apiParams{
 		method: "GET",
 		path:   "/v1/subscribers",
 	}
-	resp, err := sac.callApi(params)
+	if options != nil {
+		params.query = options.String()
+	}
+	resp, err := ac.callApi(params)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, NewApiError(resp)
+		return nil, nil, NewApiError(resp)
 	}
 
-	var subscribers []Subscriber
-	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&subscribers)
+	subscribers, paginationKeys := ParseListSubscribersResponse(resp)
 
-	return subscribers, nil
+	return subscribers, paginationKeys, nil
 }
