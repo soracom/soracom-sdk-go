@@ -12,59 +12,75 @@ import (
 	"time"
 )
 
-type ApiClient struct {
-	httpClient *http.Client
-	Token      string
+// Timestamp is ...
+type Timestamp struct {
+	time.Time
 }
 
-type AuthRequestBody struct {
-	Email               string `json:"email"`
-	Password            string `json:"password"`
-	TokenTimeoutSeconds int    `json:"tokenTimeoutSeconds"`
+// MarshalJSON is ...
+func (t *Timestamp) MarshalJSON() ([]byte, error) {
+	ts := t.Time.Unix()
+	stamp := fmt.Sprint(ts)
+
+	return []byte(stamp), nil
 }
 
-func (arb *AuthRequestBody) Json() string {
-	bodyBytes, err := json.Marshal(arb)
+// UnmarshalJSON is ...
+func (t *Timestamp) UnmarshalJSON(b []byte) error {
+	ts, err := strconv.Atoi(string(b))
 	if err != nil {
-		return ""
+		return err
 	}
-	return string(bodyBytes)
+
+	t.Time = time.Unix(int64(ts), 0)
+
+	return nil
 }
 
-type AuthResponseBody struct {
-	ApiKey     string
-	OperatorId string
-	Token      string
-}
-
-func ParseAuthResponse(resp *http.Response) *AuthResponseBody {
-	var arb AuthResponseBody
-	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&arb)
-	return &arb
-}
-
+// TagValueMatchMode is one of MatchModeUnspecified, MatchModeExact or MatchModePrefix
 type TagValueMatchMode int
 
 const (
-	MatchExact TagValueMatchMode = iota
-	MatchPrefix
+	// MatchModeUnspecified is a value of TagValueMatchMode.
+	// For list functions, they don't match tag values (i.e. list all items regardless of values of tags) if this value is specified.
+	MatchModeUnspecified TagValueMatchMode = iota
+
+	// MatchModeExact is a value of TagValueMatchMode.
+	// For list functions, they do exact match for tag values if this value is specified.
+	MatchModeExact
+
+	// MatchModePrefix is a value of TagValueMatchMode.
+	// For list functions, they do prefix match for tag values if this value is specified.
+	MatchModePrefix
 )
 
 func (m TagValueMatchMode) String() string {
 	switch m {
-	case MatchExact:
+	case MatchModeExact:
 		return "exact"
-	case MatchPrefix:
+	case MatchModePrefix:
 		return "prefix"
 	}
 	return ""
 }
 
+// Parse parses a provided string and returns TagValueMatchMode
+func (m TagValueMatchMode) Parse(s string) TagValueMatchMode {
+	switch s {
+	case "exact":
+		return MatchModeExact
+	case "prefix":
+		return MatchModePrefix
+	default:
+		return MatchModeUnspecified
+	}
+}
+
+// ListSubscribersOptions holds options for APIClient.ListSubscribers()
 type ListSubscribersOptions struct {
 	TagName           string
 	TagValue          string
-	TagValueMatchMode *TagValueMatchMode
+	TagValueMatchMode TagValueMatchMode
 	StatusFilter      string
 	TypeFilter        string
 	Limit             int
@@ -79,7 +95,7 @@ func (lso *ListSubscribersOptions) String() string {
 	if lso.TagValue != "" {
 		s = append(s, "tag_value="+lso.TagValue)
 	}
-	if lso.TagValueMatchMode != nil {
+	if lso.TagValueMatchMode != MatchModeUnspecified {
 		s = append(s, "tag_value_match_mode="+lso.TagValueMatchMode.String())
 	}
 	if lso.StatusFilter != "" {
@@ -97,191 +113,100 @@ func (lso *ListSubscribersOptions) String() string {
 	return strings.Join(s, "&")
 }
 
-type Subscriber struct {
-	Apn        string            `json:"apn"`
-	Expiry     *time.Time        `json:"expiredAt"`
-	GroupId    string            `json:"groupId"`
-	Imsi       string            `json:"imsi"`
-	IpAddress  string            `json:"ipAddress"`
-	Msisdn     string            `json:"msisdn"`
-	Status     string            `json:"status"`
-	SpeedClass string            `json:"type"`
-	Tags       map[string]string `json:"tags"`
+// SessionStatus keeps information about a session
+type SessionStatus struct {
+	DNSServers    []string   `json:"dnsServers"`
+	Imei          string     `json:"imei"`
+	LastUpdatedAt *Timestamp `json:"lastUpdatedAt"`
+	Location      *string    `json:"location"`
+	Online        bool       `json:"online"`
+	UEIPAddress   string     `json:"ueIpAddress"`
 }
 
+// Subscriber keeps information about a subscriber
+type Subscriber struct {
+	Apn                string            `json:"apn"`
+	CreatedTime        *Timestamp        `json:"createdTime"`
+	ExpiryTime         *Timestamp        `json:"expiryTime"`
+	GroupID            *string           `json:"groupId"`
+	Imsi               string            `json:"imsi"`
+	IPAddress          *string           `json:"ipAddress"`
+	LastModifiedTime   *Timestamp        `json:"lastModifiedTime"`
+	ModuleType         string            `json:"ModuleType"`
+	Msisdn             string            `json:"msisdn"`
+	OperatorID         string            `json:"operatorId"`
+	Plan               int               `json:"plan"`
+	SessionStatus      *SessionStatus    `json:"sessionStatus"`
+	Status             string            `json:"status"`
+	SpeedClass         string            `json:"type"`
+	Tags               map[string]string `json:"tags"`
+	TerminationEnabled bool              `json:"terminationEnabled"`
+}
+
+// PaginationKeys holds keys for pagination
 type PaginationKeys struct {
 	Prev string
 	Next string
 }
 
-func ParseListSubscribersResponse(resp *http.Response) (subs []Subscriber, pk *PaginationKeys) {
+func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *PaginationKeys, error) {
+	subs := make([]Subscriber, 0, 10)
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&subs)
 
-	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
-	if linkHeader == "" {
-		return
+	// read open bracket
+	_, err := dec.Token()
+	if err != nil {
+		return nil, nil, err
 	}
 
-	pk = &PaginationKeys{}
-	links := strings.Split(linkHeader, ",")
-	for _, link := range links {
-		s := strings.Split(link, ";")
-		url, err := url.Parse(strings.Trim(s[0], "<>"))
+	for dec.More() {
+		var s Subscriber
+		err = dec.Decode(&s)
 		if err != nil {
 			continue
 		}
-		lek := url.Query()["last_evaluated_key"][0]
-		rel := strings.Split(s[1], "=")[1]
-		if rel == "prev" {
-			pk.Prev = lek
-		} else if rel == "next" {
-			pk.Next = lek
+		subs = append(subs, s)
+	}
+
+	// read close bracket
+	_, err = dec.Token()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pk *PaginationKeys
+	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	if linkHeader != "" {
+		pk = &PaginationKeys{}
+		links := strings.Split(linkHeader, ",")
+		for _, link := range links {
+			s := strings.Split(link, ";")
+			url, err := url.Parse(strings.Trim(s[0], "<>"))
+			if err != nil {
+				continue
+			}
+			lek := url.Query()["last_evaluated_key"][0]
+			rel := strings.Split(s[1], "=")[1]
+			if rel == "prev" {
+				pk.Prev = lek
+			} else if rel == "next" {
+				pk.Next = lek
+			}
 		}
 	}
 
-	return
+	return subs, pk, nil
 }
 
-type ApiError struct {
-	ErrorCode string
-	Message   string
-}
-
-type ApiErrorResponse struct {
-	ErrorCode   string `json:"code"`
-	Message     string `json:"message"`
-	MessageArgs string `json:"messageArgs"`
-}
-
-type apiParams struct {
-	method      string
-	path        string
-	query       string
-	contentType string
-	body        string
+func parseGetSubscriberResponse(resp *http.Response) *Subscriber {
+	var sub Subscriber
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&sub)
+	return &sub
 }
 
 func readAll(r io.Reader) string {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r)
 	return buf.String()
-}
-
-func NewApiError(resp *http.Response) *ApiError {
-	var errorCode, message string
-	ct := resp.Header.Get("Content-Type")
-
-	if strings.Index(ct, "text/plain") == 0 {
-		errorCode = "UNK0001"
-		message = readAll(resp.Body)
-	} else if strings.Index(ct, "application/json") == 0 {
-		if resp.StatusCode >= http.StatusBadRequest &&
-			resp.StatusCode < http.StatusInternalServerError {
-			dec := json.NewDecoder(resp.Body)
-			var aer ApiErrorResponse
-			dec.Decode(&aer)
-			errorCode = aer.ErrorCode
-			message = fmt.Sprintf(aer.Message, aer.MessageArgs)
-		} else {
-			errorCode = ""
-			message = readAll(resp.Body)
-		}
-	} else {
-		errorCode = "INT0001"
-		message = "Content-Type: " + ct + " is not supported"
-	}
-	return &ApiError{
-		ErrorCode: errorCode,
-		Message:   message,
-	}
-}
-
-func (ae *ApiError) Error() string {
-	return ae.Message
-}
-
-func NewApiClient() *ApiClient {
-	hc := new(http.Client)
-	return &ApiClient{
-		httpClient: hc,
-		Token:      "",
-	}
-}
-
-func (ac *ApiClient) getEndpointBase() string {
-	return "http://sora-prod.apigee.net"
-}
-
-func (ac *ApiClient) callApi(params *apiParams) (*http.Response, error) {
-	url := ac.getEndpointBase() + params.path
-	if params.query != "" {
-		url += "?" + params.query
-	}
-	fmt.Printf("url == %v\n", url)
-	req, err := http.NewRequest(
-		params.method, url, strings.NewReader(params.body))
-	if err != nil {
-		return nil, err
-	}
-
-	if params.contentType != "" {
-		req.Header.Set("Content-Type", params.contentType)
-	}
-
-	req.Header.Set("X-Soracom-Token", ac.Token)
-
-	return ac.httpClient.Do(req)
-}
-
-func (ac *ApiClient) Auth(email, password string) error {
-	body := &AuthRequestBody{
-		Email:               email,
-		Password:            password,
-		TokenTimeoutSeconds: 24 * 60 * 60,
-	}
-	params := &apiParams{
-		method:      "POST",
-		path:        "/v1/operators/auth",
-		contentType: "application/json",
-		body:        body.Json(),
-	}
-
-	resp, err := ac.callApi(params)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= http.StatusBadRequest {
-		return NewApiError(resp)
-	}
-
-	respBody := ParseAuthResponse(resp)
-	ac.Token = respBody.Token
-
-	return nil
-}
-
-func (ac *ApiClient) ListSubscribers(options *ListSubscribersOptions) ([]Subscriber, *PaginationKeys, error) {
-	params := &apiParams{
-		method: "GET",
-		path:   "/v1/subscribers",
-	}
-	if options != nil {
-		params.query = options.String()
-	}
-	resp, err := ac.callApi(params)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, nil, NewApiError(resp)
-	}
-
-	subscribers, paginationKeys := ParseListSubscribersResponse(resp)
-
-	return subscribers, paginationKeys, nil
 }

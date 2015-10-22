@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	ac := soracom.NewApiClient()
+	ac := soracom.NewAPIClient()
 
 	err := ac.Auth(email, password)
 	if err != nil {
@@ -32,11 +32,12 @@ func main() {
 		return
 	}
 
-	subscribers, err := ac.ListSubscribers(nil)
+	subscribers, lek, err := ac.ListSubscribers(nil)
 	if err != nil {
 		fmt.Printf("err: %v\n", err.Error())
 		return
 	}
 
 	pp.Print(subscribers)
+	pp.Print(lek)
 }
