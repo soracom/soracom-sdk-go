@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	ac := soracom.NewAPIClient()
+	ac := soracom.NewAPIClient(nil)
 
 	err := ac.Auth(email, password)
 	if err != nil {

@@ -1,9 +1,11 @@
 package soracom
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -309,7 +311,7 @@ func TestListSubscribersWithTypeFilter(t *testing.T) {
 		t.Fatalf("Error occurred on ListSubscribers()")
 	}
 	if len(subs) < 1 {
-		t.Fatalf("5+ subscribers with beta1.medium are required")
+		t.Fatalf("5+ subscribers with s1.minimum are required")
 	}
 	//t.Logf("subs == %v", subs)
 
@@ -362,7 +364,7 @@ func TestGetSubscriber(t *testing.T) {
 		Limit: 1,
 	})
 	if err != nil {
-		t.Fatalf("You need at least a subscriber")
+		t.Fatalf("At least 1 subscriber is required")
 	}
 	imsi := subs[0].Imsi
 	sub, err := apiClient.GetSubscriber(imsi)
@@ -371,6 +373,291 @@ func TestGetSubscriber(t *testing.T) {
 	}
 	if sub.Imsi != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
+	}
+}
+
+func TestUpdateSubscriberSpeedClass(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		Limit: 1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	sub, err := apiClient.UpdateSubscriberSpeedClass(imsi, "s1.minimum")
+	if err != nil {
+		t.Fatalf("Error occurred on UpdateSubscriberSpeedClass(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.SpeedClass != "s1.minimum" {
+		t.Fatalf("Found a subscriber speed class which is not specified")
+	}
+
+	sub, err = apiClient.UpdateSubscriberSpeedClass(imsi, "s1.fast")
+	if err != nil {
+		t.Fatalf("Error occurred on UpdateSubscriberSpeedClass(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.SpeedClass != "s1.fast" {
+		t.Fatalf("Found a subscriber speed class which is not specified")
+	}
+}
+
+func TestActivateSubscriber(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "inactive",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 inactive subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	sub, err := apiClient.ActivateSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on ActivateSubscriber(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Status != "active" {
+		t.Fatalf("Found a subscriber status which is not specified")
+	}
+}
+
+func TestDeactivateSubscriber(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 active subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	sub, err := apiClient.DeactivateSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on DeactivateSubscriber(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Status != "inactive" {
+		t.Fatalf("Found a subscriber status which is not specified")
+	}
+}
+
+func TestEnableTermination(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active|inactive|ready",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 non-terminated subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	sub, err := apiClient.EnableSubscriberTermination(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if !sub.TerminationEnabled {
+		t.Fatalf("Termination must be enabled")
+	}
+
+	sub, err = apiClient.DisableSubscriberTermination(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on DisableSubscriberTermination(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.TerminationEnabled {
+		t.Fatalf("Termination must be disabled")
+	}
+
+	sub, err = apiClient.TerminateSubscriber(imsi)
+	if err == nil {
+		t.Fatalf("Termination must be failed when termination is disabled")
+	}
+	if sub != nil && sub.Status == "terminated" {
+		t.Fatalf("Termination must not be done")
+	}
+
+	sub, err = apiClient.EnableSubscriberTermination(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if !sub.TerminationEnabled {
+		t.Fatalf("Termination must be enabled")
+	}
+
+	sub, err = apiClient.DisableSubscriberTermination(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on DisableSubscriberTermination(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.TerminationEnabled {
+		t.Fatalf("Termination must be disabled")
+	}
+
+	sub, err = apiClient.TerminateSubscriber(imsi)
+	if err == nil {
+		t.Fatalf("Termination must be failed when termination is disabled")
+	}
+	if sub != nil && sub.Status == "terminated" {
+		t.Fatalf("Termination must not be done")
+	}
+}
+
+func TestSetSubscriberExpiryTime(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 active subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	sub, err := apiClient.SetSubscriberExpiryTime(imsi, tomorrow)
+	if err != nil {
+		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.ExpiryTime.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
+		fmt.Printf("sub.ExpiryTime.Time == %s, tomorrow == %s", sub.ExpiryTime.Time, tomorrow)
+		t.Fatalf("Expiry time for a subscriber has not been updated")
+	}
+}
+
+func TestUnsetSubscriberExpiryTime(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 active subscriber is required")
+	}
+	imsi := subs[0].Imsi
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	sub, err := apiClient.SetSubscriberExpiryTime(imsi, tomorrow)
+	if err != nil {
+		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.ExpiryTime.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
+		fmt.Printf("sub.ExpiryTime.Time == %s, tomorrow == %s", sub.ExpiryTime.Time, tomorrow)
+		t.Fatalf("Expiry time for a subscriber has not been updated")
+	}
+
+	sub, err = apiClient.UnsetSubscriberExpiryTime(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on UnsetSubscriberExpiryTime(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.ExpiryTime != nil {
+		t.Fatalf("Expiry time for a subscriber must be nil")
+	}
+}
+
+const (
+	tagNameForTest1    = "soracom-sdk-go-test-tag-name-日本語\\$%25&&?*-_."
+	tagValueForTest1   = "!@#$%^&*()_-=_+"
+	tagValueForTest1_2 = "ABCDEFG"
+	tagNameForTest2    = "soracom-sdk-go-test-tag-name-1"
+	tagValueForTest2   = "XYZ"
+	tagValueForTest2_2 = ""
+)
+
+func TestPutSubscriberTag(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active",
+		Limit:        1,
+	})
+	if err != nil {
+		t.Fatalf("At least 1 active subscriber is required")
+	}
+	imsi := subs[0].Imsi
+
+	tags := make([]Tag, 0, 10)
+	tags = append(tags, Tag{TagName: tagNameForTest1, TagValue: tagValueForTest1})
+	sub, err := apiClient.PutSubscriberTags(imsi, tags)
+	if err != nil {
+		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Tags[tagNameForTest1] != tagValueForTest1 {
+		t.Fatalf("Tag value '%s' could not be put on the subscriber with tag name '%s'", tagValueForTest1, tagNameForTest1)
+	}
+
+	tags = make([]Tag, 0, 10)
+	tags = append(tags, Tag{TagName: tagNameForTest1, TagValue: tagValueForTest1_2})
+	tags = append(tags, Tag{TagName: tagNameForTest2, TagValue: tagValueForTest2})
+	sub, err = apiClient.PutSubscriberTags(imsi, tags)
+	if err != nil {
+		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Tags[tagNameForTest1] != tagValueForTest1_2 {
+		t.Fatalf("Tag value '%s' could not be put on the subscriber with tag name '%s'", tagValueForTest1_2, tagNameForTest1)
+	}
+	if sub.Tags[tagNameForTest2] != tagValueForTest2 {
+		t.Fatalf("Tag value '%s' could not be put on the subscriber with tag name '%s'", tagValueForTest2, tagNameForTest2)
+	}
+
+	tags = make([]Tag, 0, 10)
+	tags = append(tags, Tag{TagName: tagNameForTest2, TagValue: tagValueForTest2_2})
+	sub, err = apiClient.PutSubscriberTags(imsi, tags)
+	if err != nil {
+		t.Fatalf("Error occurred on PutSubscriberTag(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Tags[tagNameForTest1] != tagValueForTest1_2 {
+		t.Fatalf("Tag value '%s' with tag name '%s' has been unexpectedly changed", tagValueForTest1_2, tagNameForTest1)
+	}
+	if sub.Tags[tagNameForTest2] != tagValueForTest2_2 {
+		t.Fatalf("Tag value '%s' could not be put on the subscriber with tag name '%s'", tagValueForTest2, tagNameForTest2)
+	}
+
+	err = apiClient.DeleteSubscriberTag(imsi, tagNameForTest1)
+	if err != nil {
+		t.Fatalf("Error occurred on DeteleSubscriberTag(): %v", err.Error())
+	}
+
+	sub, err = apiClient.GetSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on GetSubscriber(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if sub.Tags[tagNameForTest1] != "" {
+		t.Fatalf("Tag value '%s' could not be deleted on the subscriber with tag name '%s'", tagValueForTest1_2, tagNameForTest1)
+	}
+	if sub.Tags[tagNameForTest2] != tagValueForTest2_2 {
+		t.Fatalf("Tag value '%s' with tag name '%s' has been unexpectedly changed", tagValueForTest2, tagNameForTest2)
 	}
 }
 

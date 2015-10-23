@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+// Tag is a pair of Name and Value.
+type Tag struct {
+	TagName  string `json:"tagName"`
+	TagValue string `json:"tagValue"`
+}
+
 // Timestamp is ...
 type Timestamp struct {
 	time.Time
@@ -19,7 +25,7 @@ type Timestamp struct {
 
 // MarshalJSON is ...
 func (t *Timestamp) MarshalJSON() ([]byte, error) {
-	ts := t.Time.Unix()
+	ts := t.Time.UnixNano() / (1000 * 1000)
 	stamp := fmt.Sprint(ts)
 
 	return []byte(stamp), nil
@@ -32,9 +38,48 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	t.Time = time.Unix(int64(ts), 0)
+	ms := int64(ts)
+	s := ms / 1000
+	ns := (ms % 1000) * 1000 * 1000
+	t.Time = time.Unix(s, ns)
 
 	return nil
+}
+
+// UnixMilli returns t as a Unix time, the number of milliseconds elapsed since January 1, 1970 UTC.
+func (t *Timestamp) UnixMilli() int64 {
+	ns := t.Time.UnixNano()
+	return ns / (1000 * 1000)
+}
+
+// AuthRequest contains parameters for /auth API
+type AuthRequest struct {
+	Email               string `json:"email"`
+	Password            string `json:"password"`
+	TokenTimeoutSeconds int    `json:"tokenTimeoutSeconds"`
+}
+
+// JSON returns JSON representing AuthRequest
+func (ar *AuthRequest) JSON() string {
+	bodyBytes, err := json.Marshal(ar)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
+// AuthResponse contains all values returned from /auth API
+type AuthResponse struct {
+	APIKey     string `json:"apiKey"`
+	OperatorID string `json:"operatorId"`
+	Token      string `json:"token"`
+}
+
+func parseAuthResponse(resp *http.Response) *AuthResponse {
+	var ar AuthResponse
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&ar)
+	return &ar
 }
 
 // TagValueMatchMode is one of MatchModeUnspecified, MatchModeExact or MatchModePrefix
@@ -111,6 +156,22 @@ func (lso *ListSubscribersOptions) String() string {
 		s = append(s, "last_evaluated_key="+lso.LastEvaluatedKey)
 	}
 	return strings.Join(s, "&")
+}
+
+// RegisterSubscriberOptions keeps information for registering a subscriber
+type RegisterSubscriberOptions struct {
+	RegistrationSecret string            `json:"registrationSecret"`
+	GroupID            string            `json:"groupId"`
+	Tags               map[string]string `json:"tags"`
+}
+
+// JSON retunrs a JSON representing RegisterSubscriberOptions object
+func (rso *RegisterSubscriberOptions) JSON() string {
+	bodyBytes, err := json.Marshal(rso)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
 }
 
 // SessionStatus keeps information about a session
@@ -198,15 +259,66 @@ func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *Paginatio
 	return subs, pk, nil
 }
 
-func parseGetSubscriberResponse(resp *http.Response) *Subscriber {
+func parseSubscriber(resp *http.Response) *Subscriber {
 	var sub Subscriber
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&sub)
 	return &sub
 }
 
+type updateSpeedClassRequest struct {
+	SpeedClass string `json:"speedClass"`
+}
+
+// JSON retunrs a JSON representing updateSpeedClassRequest object
+func (r *updateSpeedClassRequest) JSON() string {
+	bodyBytes, err := json.Marshal(r)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
+type setExpiryTimeRequest struct {
+	ExpiryTime string `json:"expiryTime"`
+}
+
+// JSON retunrs a JSON representing setExpiryTimeRequest object
+func (r *setExpiryTimeRequest) JSON() string {
+	bodyBytes, err := json.Marshal(r)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
+type setSubscriberGroupRequest struct {
+	GroupID string `json:"groupId"`
+}
+
+// JSON retunrs a JSON representing setSubscriberGroupRequest object
+func (r *setSubscriberGroupRequest) JSON() string {
+	bodyBytes, err := json.Marshal(r)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
+func tagsToJSON(tags []Tag) string {
+	bodyBytes, err := json.Marshal(tags)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
 func readAll(r io.Reader) string {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r)
 	return buf.String()
+}
+
+func percentEncoding(s string) string {
+	return url.QueryEscape(s)
 }
