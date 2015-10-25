@@ -1,3 +1,5 @@
+// Package: SORACOM SDK for Go.
+
 package soracom
 
 import (
