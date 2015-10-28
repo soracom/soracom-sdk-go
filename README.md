@@ -24,6 +24,7 @@ APIClient のインスタンスを作成し、Auth() 関数で認証を行った
 package main
 
 import (
+    "fmt"
     "github.com/soracom/soracom-sdk-go"
 )
 
