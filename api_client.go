@@ -12,6 +12,7 @@ type APIClient struct {
 	httpClient *http.Client
 	APIKey     string
 	Token      string
+	OperatorID string
 	endpoint   string
 }
 
@@ -33,6 +34,7 @@ func NewAPIClient(options *APIClientOptions) *APIClient {
 		httpClient: hc,
 		APIKey:     "",
 		Token:      "",
+		OperatorID: "",
 		endpoint:   endpoint,
 	}
 }
@@ -98,8 +100,114 @@ func (ac *APIClient) Auth(email, password string) error {
 	respBody := parseAuthResponse(resp)
 	ac.APIKey = respBody.APIKey
 	ac.Token = respBody.Token
+	ac.OperatorID = respBody.OperatorID
 
 	return nil
+}
+
+// GenerateAPIToken generates an API token
+func (ac *APIClient) GenerateAPIToken(timeout int) (string, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators/" + ac.OperatorID + "/token",
+		contentType: "application/json",
+		body:        (&generateAPITokenRequest{Timeout: timeout}).JSON(),
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	respBody := parseGenerateAPITokenResponse(resp)
+	return respBody.Token, nil
+}
+
+// UpdatePassword updates operator's password
+func (ac *APIClient) UpdatePassword(currentPassword, newPassword string) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators/" + ac.OperatorID + "/password",
+		contentType: "application/json",
+		body:        (&updatePasswordRequest{CurrentPassword: currentPassword, NewPassword: newPassword}).JSON(),
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// GetSupportToken retrieves a token for accessing to the support site
+func (ac *APIClient) GetSupportToken() (string, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators/" + ac.OperatorID + "/support/token",
+		contentType: "application/json",
+		body:        "{}",
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	respBody := parseGetSupportTokenResponse(resp)
+	return respBody.Token, nil
+}
+
+// CreateOperator sends a request to create an operator with the specified email & password.
+func (ac *APIClient) CreateOperator(email, password string) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators",
+		contentType: "application/json",
+		body:        (&createOperatorRequest{Email: email, Password: password}).JSON(),
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// VerifyOperator sends a token to complete an operator creation process.
+func (ac *APIClient) VerifyOperator(token string) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators/verify",
+		contentType: "application/json",
+		body:        (&verifyOperatorRequest{Token: token}).JSON(),
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// GetOperator gets information about an operator specifed by operatorID.
+func (ac *APIClient) GetOperator(operatorID string) (*Operator, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/operators/" + operatorID,
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	operator := parseOperator(resp)
+
+	return operator, nil
 }
 
 // ListSubscribers lists subscribers for the operator

@@ -84,6 +84,82 @@ func parseAuthResponse(resp *http.Response) *AuthResponse {
 	return &ar
 }
 
+type generateAPITokenRequest struct {
+	Timeout int `json:"timeout_seconds"`
+}
+
+// JSON retunrs a JSON representing updateSpeedClassRequest object
+func (r *generateAPITokenRequest) JSON() string {
+	return toJSON(r)
+}
+
+// GenerateAPITokenResponse contains all values returned from /operators/{operator_id}/token API
+type GenerateAPITokenResponse struct {
+	Token string `json:"token"`
+}
+
+func parseGenerateAPITokenResponse(resp *http.Response) *GenerateAPITokenResponse {
+	var r GenerateAPITokenResponse
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&r)
+	return &r
+}
+
+type updatePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
+func (r *updatePasswordRequest) JSON() string {
+	return toJSON(r)
+}
+
+// GetSupportTokenResponse contains all values returned from /operators/{operator_id}/support/token API.
+type GetSupportTokenResponse struct {
+	Token string `json:"token"`
+}
+
+func parseGetSupportTokenResponse(resp *http.Response) *GetSupportTokenResponse {
+	var r GetSupportTokenResponse
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&r)
+	return &r
+}
+
+type createOperatorRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (r *createOperatorRequest) JSON() string {
+	return toJSON(r)
+}
+
+type verifyOperatorRequest struct {
+	Token string `json:"token"`
+}
+
+func (r *verifyOperatorRequest) JSON() string {
+	return toJSON(r)
+}
+
+// Operator keeps information about an operator
+type Operator struct {
+	OperatorID     string     `json:"operatorId"`
+	RootOperatorID *string    `json:"rootOperatorId"`
+	Email          string     `json:"email"`
+	Description    *string    `json:"description"`
+	CreateDate     *time.Time `json:"createDate"`
+	UpdateDate     *time.Time `json:"updateDate"`
+}
+
+func parseOperator(resp *http.Response) *Operator {
+	var o Operator
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&o)
+	return &o
+}
+
 // TagValueMatchMode is one of MatchModeUnspecified, MatchModeExact or MatchModePrefix
 type TagValueMatchMode int
 
@@ -169,11 +245,7 @@ type RegisterSubscriberOptions struct {
 
 // JSON retunrs a JSON representing RegisterSubscriberOptions object
 func (rso *RegisterSubscriberOptions) JSON() string {
-	bodyBytes, err := json.Marshal(rso)
-	if err != nil {
-		return ""
-	}
-	return string(bodyBytes)
+	return toJSON(rso)
 }
 
 // SessionStatus keeps information about a session
@@ -323,4 +395,12 @@ func readAll(r io.Reader) string {
 
 func percentEncoding(s string) string {
 	return url.QueryEscape(s)
+}
+
+func toJSON(x interface{}) string {
+	bodyBytes, err := json.Marshal(x)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
 }

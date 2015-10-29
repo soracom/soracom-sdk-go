@@ -36,6 +36,56 @@ func TestAuth(t *testing.T) {
 	}
 }
 
+func TestGenerateAPIToken(t *testing.T) {
+	_, err := apiClient.GenerateAPIToken(0)
+	if err != nil {
+		t.Fatalf("GenerateAPIToken(0) failed")
+	}
+
+	_, err = apiClient.GenerateAPIToken(1)
+	if err != nil {
+		t.Fatalf("GenerateAPIToken(1) failed")
+	}
+
+	_, err = apiClient.GenerateAPIToken(48 * 60 * 60)
+	if err != nil {
+		t.Fatalf("GenerateAPIToken(MAX) failed")
+	}
+
+	/*
+		_, err = apiClient.GenerateAPIToken(48*60*60 + 1)
+		if err == nil {
+			t.Fatalf("GenerateAPIToken(MAX + 1) should fail")
+		}
+
+		_, err = apiClient.GenerateAPIToken(-1)
+		if err == nil {
+			t.Fatalf("GenerateAPIToken(-1) should fail")
+		}
+
+	*/
+}
+
+func TestGetSupportToken(t *testing.T) {
+	token, err := apiClient.GetSupportToken()
+	if err != nil {
+		t.Fatalf("GetSupportToken() failed")
+	}
+	if token == "" {
+		t.Fatalf("Unable to get a support token")
+	}
+}
+
+func TestGetOperator(t *testing.T) {
+	o, err := apiClient.GetOperator(apiClient.OperatorID)
+	if err != nil {
+		t.Fatalf("GetOperator() failed")
+	}
+	if o.OperatorID != apiClient.OperatorID {
+		t.Fatalf("Got an unexpected operator")
+	}
+}
+
 func TestListSubscribers(t *testing.T) {
 	subs, pk, err := apiClient.ListSubscribers(nil)
 	if err != nil {
