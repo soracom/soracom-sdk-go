@@ -413,7 +413,7 @@ func TestGetSubscriber(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		Limit: 1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -430,7 +430,7 @@ func TestUpdateSubscriberSpeedClass(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		Limit: 1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -462,7 +462,7 @@ func TestActivateSubscriber(t *testing.T) {
 		StatusFilter: "inactive",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 inactive subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -483,7 +483,7 @@ func TestDeactivateSubscriber(t *testing.T) {
 		StatusFilter: "active",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -504,7 +504,7 @@ func TestEnableTermination(t *testing.T) {
 		StatusFilter: "active|inactive|ready",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 non-terminated subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -574,7 +574,7 @@ func TestSetSubscriberExpiryTime(t *testing.T) {
 		StatusFilter: "active",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -597,7 +597,7 @@ func TestUnsetSubscriberExpiryTime(t *testing.T) {
 		StatusFilter: "active",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -640,7 +640,7 @@ func TestPutSubscriberTag(t *testing.T) {
 		StatusFilter: "active",
 		Limit:        1,
 	})
-	if err != nil {
+	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
 	imsi := subs[0].Imsi
@@ -727,4 +727,50 @@ func sameSubscribers(subs1, subs2 []Subscriber) bool {
 
 func sameSubscriber(sub1, sub2 *Subscriber) bool {
 	return sub1.Imsi == sub2.Imsi
+}
+
+func TestGetAirStats(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active",
+		Limit:        1,
+	})
+	if err != nil || len(subs) == 0 {
+		t.Fatalf("At least 1 active subscriber is required")
+	}
+	imsi := subs[0].Imsi
+
+	from := time.Now().AddDate(0, -6, 0)
+	to := time.Now()
+	stats, err := apiClient.GetAirStats(imsi, from, to, StatsPeriodMonth)
+	if err != nil {
+		t.Fatalf("GetAirStats() failed: %v", err.Error())
+	}
+
+	if len(stats) == 0 {
+		t.Fatalf("TODO: ensure to find a subscriber with real stats")
+	}
+}
+
+func TestGetBeamStats(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		TagName:           "soracom-sdk-go-test",
+		TagValue:          "beam-stats",
+		TagValueMatchMode: MatchModePrefix,
+		Limit:             1,
+	})
+	if err != nil || len(subs) == 0 {
+		t.Fatalf("At least 1 subscriber which has soracom-sdk-go-test tag with value 'beam-stats' is required")
+	}
+	imsi := subs[0].Imsi
+
+	from := time.Now().AddDate(0, -6, 0)
+	to := time.Now()
+	stats, err := apiClient.GetBeamStats(imsi, from, to, StatsPeriodMonth)
+	if err != nil {
+		t.Fatalf("GetBeamStats() failed: %v", err.Error())
+	}
+
+	if len(stats) == 0 {
+		t.Fatalf("TODO: ensure to find a subscriber with real stats")
+	}
 }

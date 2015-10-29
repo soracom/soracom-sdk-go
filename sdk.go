@@ -20,13 +20,13 @@ type Tag struct {
 	TagValue string `json:"tagValue"`
 }
 
-// Timestamp is ...
-type Timestamp struct {
+// TimestampMilli is ...
+type TimestampMilli struct {
 	time.Time
 }
 
 // MarshalJSON is ...
-func (t *Timestamp) MarshalJSON() ([]byte, error) {
+func (t *TimestampMilli) MarshalJSON() ([]byte, error) {
 	ts := t.Time.UnixNano() / (1000 * 1000)
 	stamp := fmt.Sprint(ts)
 
@@ -34,7 +34,7 @@ func (t *Timestamp) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON is ...
-func (t *Timestamp) UnmarshalJSON(b []byte) error {
+func (t *TimestampMilli) UnmarshalJSON(b []byte) error {
 	ts, err := strconv.Atoi(string(b))
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 }
 
 // UnixMilli returns t as a Unix time, the number of milliseconds elapsed since January 1, 1970 UTC.
-func (t *Timestamp) UnixMilli() int64 {
+func (t *TimestampMilli) UnixMilli() int64 {
 	ns := t.Time.UnixNano()
 	return ns / (1000 * 1000)
 }
@@ -160,6 +160,131 @@ func parseOperator(resp *http.Response) *Operator {
 	return &o
 }
 
+// StatsPeriod is a period to gather stats
+type StatsPeriod int
+
+const (
+	// StatsPeriodUnspecified means no StatsPeriod is specified
+	StatsPeriodUnspecified StatsPeriod = iota
+
+	// StatsPeriodMonth means the period of gathering stats is 'month'
+	StatsPeriodMonth
+
+	// StatsPeriodDay means that the period of gathering stats is 'day'
+	StatsPeriodDay
+
+	// StatsPeriodMinutes means that the period of gathering stats is 'minutes'
+	StatsPeriodMinutes
+)
+
+func (p StatsPeriod) String() string {
+	switch p {
+	case StatsPeriodMonth:
+		return "month"
+	case StatsPeriodDay:
+		return "day"
+	case StatsPeriodMinutes:
+		return "minutes"
+	}
+	return ""
+}
+
+// Parse parses the specified string and returns a StatsPeriod value represented by the string
+func (p StatsPeriod) Parse(s string) StatsPeriod {
+	switch s {
+	case "month":
+		return StatsPeriodMonth
+	case "day":
+		return StatsPeriodDay
+	case "minutes":
+		return StatsPeriodMinutes
+	default:
+		return StatsPeriodUnspecified
+	}
+}
+
+// SpeedClass represents one of speed classes
+type SpeedClass string
+
+const (
+	// SpeedClassS1Minimum is s1.minimum
+	SpeedClassS1Minimum = "s1.minimum"
+
+	// SpeedClassS1Slow is s1.slow
+	SpeedClassS1Slow = "s1.slow"
+
+	// SpeedClassS1Standard is s1.standard
+	SpeedClassS1Standard = "s1.standard"
+
+	// SpeedClassS1Fast is s1.fast
+	SpeedClassS1Fast = "s1.fast"
+)
+
+// AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
+type AirStatsForSpeedClass struct {
+	UploadBytes     uint64 `json:"uploadByteSizeTotal"`
+	UploadPackets   uint64 `json:"uploadPacketSizeTotal"`
+	DownloadBytes   uint64 `json:"downloadByteSizeTotal"`
+	DownloadPackets uint64 `json:"downloadPacketSizeTotal"`
+}
+
+// AirStats holds a set of traffic information for each speed class
+type AirStats struct {
+	Date     string                               `json:"date"`
+	Unixtime uint64                               `json:"unixtime"`
+	Traffic  map[SpeedClass]AirStatsForSpeedClass `json:"dataTrafficStatsMap"`
+}
+
+func parseAirStats(resp *http.Response) []AirStats {
+	var v []AirStats
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&v)
+	return v
+}
+
+// BeamType represents one of in/out protocols for Beam
+type BeamType string
+
+const (
+	// BeamTypeInHTTP is ...
+	BeamTypeInHTTP = "inHttp"
+	// BeamTypeInMQTT is ...
+	BeamTypeInMQTT = "inMqtt"
+	// BeamTypeInTCP is ...
+	BeamTypeInTCP = "inTcp"
+	// BeamTypeOutHTTP is ...
+	BeamTypeOutHTTP = "outHttp"
+	// BeamTypeOutHTTPS is ...
+	BeamTypeOutHTTPS = "outHttps"
+	// BeamTypeOutMQTT is ...
+	BeamTypeOutMQTT = "outMqtt"
+	// BeamTypeOutMQTTS is ...
+	BeamTypeOutMQTTS = "outMqtts"
+	// BeamTypeOutTCP is ...
+	BeamTypeOutTCP = "outTcp"
+	// BeamTypeOutTCPS is ...
+	BeamTypeOutTCPS = "outTcps"
+)
+
+// BeamStatsForType holds Upload/Download Bytes/Packets for a speed class
+type BeamStatsForType struct {
+	Count uint64 `json:"count"`
+}
+
+// BeamStats holds a set of traffic information for each speed class
+type BeamStats struct {
+	Date     string                        `json:"date"`
+	Unixtime uint64                        `json:"unixtime"`
+	Traffic  map[BeamType]BeamStatsForType `json:"beamStatsMap"`
+}
+
+func parseBeamStats(resp *http.Response) []BeamStats {
+	var v []BeamStats
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&v)
+	return v
+}
+
 // TagValueMatchMode is one of MatchModeUnspecified, MatchModeExact or MatchModePrefix
 type TagValueMatchMode int
 
@@ -250,23 +375,23 @@ func (rso *RegisterSubscriberOptions) JSON() string {
 
 // SessionStatus keeps information about a session
 type SessionStatus struct {
-	DNSServers    []string   `json:"dnsServers"`
-	Imei          string     `json:"imei"`
-	LastUpdatedAt *Timestamp `json:"lastUpdatedAt"`
-	Location      *string    `json:"location"`
-	Online        bool       `json:"online"`
-	UEIPAddress   string     `json:"ueIpAddress"`
+	DNSServers    []string        `json:"dnsServers"`
+	Imei          string          `json:"imei"`
+	LastUpdatedAt *TimestampMilli `json:"lastUpdatedAt"`
+	Location      *string         `json:"location"`
+	Online        bool            `json:"online"`
+	UEIPAddress   string          `json:"ueIpAddress"`
 }
 
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
 	Apn                string            `json:"apn"`
-	CreatedTime        *Timestamp        `json:"createdTime"`
-	ExpiryTime         *Timestamp        `json:"expiryTime"`
+	CreatedTime        *TimestampMilli   `json:"createdTime"`
+	ExpiryTime         *TimestampMilli   `json:"expiryTime"`
 	GroupID            *string           `json:"groupId"`
 	Imsi               string            `json:"imsi"`
 	IPAddress          *string           `json:"ipAddress"`
-	LastModifiedTime   *Timestamp        `json:"lastModifiedTime"`
+	LastModifiedTime   *TimestampMilli   `json:"lastModifiedTime"`
 	ModuleType         string            `json:"ModuleType"`
 	Msisdn             string            `json:"msisdn"`
 	OperatorID         string            `json:"operatorId"`

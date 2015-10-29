@@ -394,7 +394,7 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 
 // SetSubscriberExpiryTime sets expiration time of a subscriber.
 func (ac *APIClient) SetSubscriberExpiryTime(imsi string, expiryTime time.Time) (*Subscriber, error) {
-	ts := &Timestamp{Time: expiryTime}
+	ts := &TimestampMilli{Time: expiryTime}
 	req := &setExpiryTimeRequest{
 		ExpiryTime: fmt.Sprint(ts.UnixMilli()),
 	}
@@ -510,4 +510,40 @@ func (ac *APIClient) DeleteSubscriberTag(imsi string, tagName string) error {
 	defer resp.Body.Close()
 
 	return nil
+}
+
+// GetAirStats gets stats of Air for a subscriber for a specified period
+func (ac *APIClient) GetAirStats(imsi string, from, to time.Time, period StatsPeriod) ([]AirStats, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   fmt.Sprintf("/v1/stats/air/subscribers/%s?from=%d&to=%d&period=%s", imsi, from.Unix(), to.Unix(), period.String()),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	airStats := parseAirStats(resp)
+
+	return airStats, nil
+}
+
+// GetBeamStats gets stats of Beam for a subscriber for a specified period
+func (ac *APIClient) GetBeamStats(imsi string, from, to time.Time, period StatsPeriod) ([]BeamStats, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   fmt.Sprintf("/v1/stats/beam/subscribers/%s?from=%d&to=%d&period=%s", imsi, from.Unix(), to.Unix(), period.String()),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	beamStats := parseBeamStats(resp)
+
+	return beamStats, nil
 }
