@@ -3,6 +3,7 @@ package soracom
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -546,4 +547,60 @@ func (ac *APIClient) GetBeamStats(imsi string, from, to time.Time, period StatsP
 	beamStats := parseBeamStats(resp)
 
 	return beamStats, nil
+}
+
+// ExportAirStats gets a URL to download a CSV file which contains stats of all Air SIMs for the operator for a specified period
+func (ac *APIClient) ExportAirStats(from, to time.Time, period StatsPeriod) (*url.URL, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        fmt.Sprintf("/v1/stats/air/operators/%s/export", ac.OperatorID),
+		contentType: "application/json",
+		body: (&exportAirStatsRequest{
+			From:   from.Unix(),
+			To:     to.Unix(),
+			Period: period.String(),
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody := parseExportAirStatsResponse(resp)
+	url, err := url.Parse(respBody.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	return url, nil
+}
+
+// ExportBeamStats gets a URL to download a CSV file which contains all stats of Beam for the operator for a specified period
+func (ac *APIClient) ExportBeamStats(from, to time.Time, period StatsPeriod) (*url.URL, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        fmt.Sprintf("/v1/stats/beam/operators/%s/export", ac.OperatorID),
+		contentType: "application/json",
+		body: (&exportBeamStatsRequest{
+			From:   from.Unix(),
+			To:     to.Unix(),
+			Period: period.String(),
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody := parseExportBeamStatsResponse(resp)
+	url, err := url.Parse(respBody.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	return url, nil
 }

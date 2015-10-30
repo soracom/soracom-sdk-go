@@ -774,3 +774,25 @@ func TestGetBeamStats(t *testing.T) {
 		t.Fatalf("TODO: ensure to find a subscriber with real stats")
 	}
 }
+
+func TestExportAirStats(t *testing.T) {
+	from := time.Now().AddDate(0, -6, 0)
+	to := time.Now()
+	url, err := apiClient.ExportAirStats(from, to, StatsPeriodMonth)
+	if err != nil {
+		t.Fatalf("ExportAirStats() failed: %v", err.Error())
+	}
+
+	fmt.Println(url.String())
+}
+
+func TestExportBeamStats(t *testing.T) {
+	from := time.Now().AddDate(0, -6, 0)
+	to := time.Now()
+	url, err := apiClient.ExportBeamStats(from, to, StatsPeriodMonth)
+	if err != nil {
+		t.Fatalf("ExportBeamStats() failed: %v", err.Error())
+	}
+
+	fmt.Println(url.String())
+}

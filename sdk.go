@@ -160,131 +160,6 @@ func parseOperator(resp *http.Response) *Operator {
 	return &o
 }
 
-// StatsPeriod is a period to gather stats
-type StatsPeriod int
-
-const (
-	// StatsPeriodUnspecified means no StatsPeriod is specified
-	StatsPeriodUnspecified StatsPeriod = iota
-
-	// StatsPeriodMonth means the period of gathering stats is 'month'
-	StatsPeriodMonth
-
-	// StatsPeriodDay means that the period of gathering stats is 'day'
-	StatsPeriodDay
-
-	// StatsPeriodMinutes means that the period of gathering stats is 'minutes'
-	StatsPeriodMinutes
-)
-
-func (p StatsPeriod) String() string {
-	switch p {
-	case StatsPeriodMonth:
-		return "month"
-	case StatsPeriodDay:
-		return "day"
-	case StatsPeriodMinutes:
-		return "minutes"
-	}
-	return ""
-}
-
-// Parse parses the specified string and returns a StatsPeriod value represented by the string
-func (p StatsPeriod) Parse(s string) StatsPeriod {
-	switch s {
-	case "month":
-		return StatsPeriodMonth
-	case "day":
-		return StatsPeriodDay
-	case "minutes":
-		return StatsPeriodMinutes
-	default:
-		return StatsPeriodUnspecified
-	}
-}
-
-// SpeedClass represents one of speed classes
-type SpeedClass string
-
-const (
-	// SpeedClassS1Minimum is s1.minimum
-	SpeedClassS1Minimum = "s1.minimum"
-
-	// SpeedClassS1Slow is s1.slow
-	SpeedClassS1Slow = "s1.slow"
-
-	// SpeedClassS1Standard is s1.standard
-	SpeedClassS1Standard = "s1.standard"
-
-	// SpeedClassS1Fast is s1.fast
-	SpeedClassS1Fast = "s1.fast"
-)
-
-// AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
-type AirStatsForSpeedClass struct {
-	UploadBytes     uint64 `json:"uploadByteSizeTotal"`
-	UploadPackets   uint64 `json:"uploadPacketSizeTotal"`
-	DownloadBytes   uint64 `json:"downloadByteSizeTotal"`
-	DownloadPackets uint64 `json:"downloadPacketSizeTotal"`
-}
-
-// AirStats holds a set of traffic information for each speed class
-type AirStats struct {
-	Date     string                               `json:"date"`
-	Unixtime uint64                               `json:"unixtime"`
-	Traffic  map[SpeedClass]AirStatsForSpeedClass `json:"dataTrafficStatsMap"`
-}
-
-func parseAirStats(resp *http.Response) []AirStats {
-	var v []AirStats
-	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&v)
-	return v
-}
-
-// BeamType represents one of in/out protocols for Beam
-type BeamType string
-
-const (
-	// BeamTypeInHTTP is ...
-	BeamTypeInHTTP = "inHttp"
-	// BeamTypeInMQTT is ...
-	BeamTypeInMQTT = "inMqtt"
-	// BeamTypeInTCP is ...
-	BeamTypeInTCP = "inTcp"
-	// BeamTypeOutHTTP is ...
-	BeamTypeOutHTTP = "outHttp"
-	// BeamTypeOutHTTPS is ...
-	BeamTypeOutHTTPS = "outHttps"
-	// BeamTypeOutMQTT is ...
-	BeamTypeOutMQTT = "outMqtt"
-	// BeamTypeOutMQTTS is ...
-	BeamTypeOutMQTTS = "outMqtts"
-	// BeamTypeOutTCP is ...
-	BeamTypeOutTCP = "outTcp"
-	// BeamTypeOutTCPS is ...
-	BeamTypeOutTCPS = "outTcps"
-)
-
-// BeamStatsForType holds Upload/Download Bytes/Packets for a speed class
-type BeamStatsForType struct {
-	Count uint64 `json:"count"`
-}
-
-// BeamStats holds a set of traffic information for each speed class
-type BeamStats struct {
-	Date     string                        `json:"date"`
-	Unixtime uint64                        `json:"unixtime"`
-	Traffic  map[BeamType]BeamStatsForType `json:"beamStatsMap"`
-}
-
-func parseBeamStats(resp *http.Response) []BeamStats {
-	var v []BeamStats
-	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&v)
-	return v
-}
-
 // TagValueMatchMode is one of MatchModeUnspecified, MatchModeExact or MatchModePrefix
 type TagValueMatchMode int
 
@@ -502,6 +377,173 @@ func (r *setSubscriberGroupRequest) JSON() string {
 		return ""
 	}
 	return string(bodyBytes)
+}
+
+// StatsPeriod is a period to gather stats
+type StatsPeriod int
+
+const (
+	// StatsPeriodUnspecified means no StatsPeriod is specified
+	StatsPeriodUnspecified StatsPeriod = iota
+
+	// StatsPeriodMonth means the period of gathering stats is 'month'
+	StatsPeriodMonth
+
+	// StatsPeriodDay means that the period of gathering stats is 'day'
+	StatsPeriodDay
+
+	// StatsPeriodMinutes means that the period of gathering stats is 'minutes'
+	StatsPeriodMinutes
+)
+
+func (p StatsPeriod) String() string {
+	switch p {
+	case StatsPeriodMonth:
+		return "month"
+	case StatsPeriodDay:
+		return "day"
+	case StatsPeriodMinutes:
+		return "minutes"
+	}
+	return ""
+}
+
+// Parse parses the specified string and returns a StatsPeriod value represented by the string
+func (p StatsPeriod) Parse(s string) StatsPeriod {
+	switch s {
+	case "month":
+		return StatsPeriodMonth
+	case "day":
+		return StatsPeriodDay
+	case "minutes":
+		return StatsPeriodMinutes
+	default:
+		return StatsPeriodUnspecified
+	}
+}
+
+// SpeedClass represents one of speed classes
+type SpeedClass string
+
+const (
+	// SpeedClassS1Minimum is s1.minimum
+	SpeedClassS1Minimum = "s1.minimum"
+
+	// SpeedClassS1Slow is s1.slow
+	SpeedClassS1Slow = "s1.slow"
+
+	// SpeedClassS1Standard is s1.standard
+	SpeedClassS1Standard = "s1.standard"
+
+	// SpeedClassS1Fast is s1.fast
+	SpeedClassS1Fast = "s1.fast"
+)
+
+// AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
+type AirStatsForSpeedClass struct {
+	UploadBytes     uint64 `json:"uploadByteSizeTotal"`
+	UploadPackets   uint64 `json:"uploadPacketSizeTotal"`
+	DownloadBytes   uint64 `json:"downloadByteSizeTotal"`
+	DownloadPackets uint64 `json:"downloadPacketSizeTotal"`
+}
+
+// AirStats holds a set of traffic information for each speed class
+type AirStats struct {
+	Date     string                               `json:"date"`
+	Unixtime uint64                               `json:"unixtime"`
+	Traffic  map[SpeedClass]AirStatsForSpeedClass `json:"dataTrafficStatsMap"`
+}
+
+func parseAirStats(resp *http.Response) []AirStats {
+	var v []AirStats
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&v)
+	return v
+}
+
+// BeamType represents one of in/out protocols for Beam
+type BeamType string
+
+const (
+	// BeamTypeInHTTP is ...
+	BeamTypeInHTTP = "inHttp"
+	// BeamTypeInMQTT is ...
+	BeamTypeInMQTT = "inMqtt"
+	// BeamTypeInTCP is ...
+	BeamTypeInTCP = "inTcp"
+	// BeamTypeOutHTTP is ...
+	BeamTypeOutHTTP = "outHttp"
+	// BeamTypeOutHTTPS is ...
+	BeamTypeOutHTTPS = "outHttps"
+	// BeamTypeOutMQTT is ...
+	BeamTypeOutMQTT = "outMqtt"
+	// BeamTypeOutMQTTS is ...
+	BeamTypeOutMQTTS = "outMqtts"
+	// BeamTypeOutTCP is ...
+	BeamTypeOutTCP = "outTcp"
+	// BeamTypeOutTCPS is ...
+	BeamTypeOutTCPS = "outTcps"
+)
+
+// BeamStatsForType holds Upload/Download Bytes/Packets for a speed class
+type BeamStatsForType struct {
+	Count uint64 `json:"count"`
+}
+
+// BeamStats holds a set of traffic information for each speed class
+type BeamStats struct {
+	Date     string                        `json:"date"`
+	Unixtime uint64                        `json:"unixtime"`
+	Traffic  map[BeamType]BeamStatsForType `json:"beamStatsMap"`
+}
+
+func parseBeamStats(resp *http.Response) []BeamStats {
+	var v []BeamStats
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&v)
+	return v
+}
+
+type exportAirStatsRequest struct {
+	From   int64  `json:"from"`
+	To     int64  `json:"to"`
+	Period string `json:"period"`
+}
+
+func (r *exportAirStatsRequest) JSON() string {
+	return toJSON(r)
+}
+
+type exportAirStatsResponse struct {
+	URL string `json:"url"`
+}
+
+func parseExportAirStatsResponse(resp *http.Response) *exportAirStatsResponse {
+	var r exportAirStatsResponse
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&r)
+	return &r
+}
+
+type exportBeamStatsRequest struct {
+	From   int64  `json:"from"`
+	To     int64  `json:"to"`
+	Period string `json:"period"`
+}
+
+func (r *exportBeamStatsRequest) JSON() string {
+	return toJSON(r)
+}
+
+type exportBeamStatsResponse struct {
+	URL string `json:"url"`
+}
+
+func parseExportBeamStatsResponse(resp *http.Response) *exportBeamStatsResponse {
+	var r exportBeamStatsResponse
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&r)
+	return &r
 }
 
 func tagsToJSON(tags []Tag) string {
