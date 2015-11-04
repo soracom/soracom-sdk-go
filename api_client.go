@@ -604,3 +604,247 @@ func (ac *APIClient) ExportBeamStats(from, to time.Time, period StatsPeriod) (*u
 
 	return url, nil
 }
+
+// ListGroups lists groups for the operator
+func (ac *APIClient) ListGroups(options *ListGroupsOptions) ([]Group, *PaginationKeys, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/groups",
+	}
+	if options != nil {
+		params.query = options.String()
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	groups, paginationKeys, err := parseListGroupsResponse(resp)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return groups, paginationKeys, nil
+}
+
+// CreateGroup creates a group
+func (ac *APIClient) CreateGroup(tags Tags) (*Group, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/groups",
+		contentType: "application/json",
+		body: (&createGroupRequest{
+			Tags: tags,
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// CreateGroupWithName creates a group with name
+func (ac *APIClient) CreateGroupWithName(name string) (*Group, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/groups",
+		contentType: "application/json",
+		body: (&createGroupRequest{
+			Tags: Tags{"name": name},
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// DeleteGroup deletes a group
+func (ac *APIClient) DeleteGroup(groupID string) error {
+	params := &apiParams{
+		method:      "DELETE",
+		path:        "/v1/groups/" + groupID,
+		contentType: "application/json",
+		body:        "{}",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// GetGroup gets detailed info about a group
+func (ac *APIClient) GetGroup(groupID string) (*Group, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/groups/" + groupID,
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// ListSubscribersInGroup lists subscribers in a group
+func (ac *APIClient) ListSubscribersInGroup(groupID string, options *ListSubscribersInGroupOptions) ([]Subscriber, *PaginationKeys, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/groups/" + groupID + "/subscribers",
+	}
+	if options != nil {
+		params.query = options.String()
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	subscribers, paginationKeys, err := parseListSubscribersResponse(resp)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return subscribers, paginationKeys, nil
+}
+
+// UpdateGroupConfigurations updates configurations for a group
+func (ac *APIClient) UpdateGroupConfigurations(groupID, namespace string, configurations []GroupConfig) (*Group, error) {
+	params := &apiParams{
+		method:      "PUT",
+		path:        "/v1/groups/" + groupID + "/configuration/" + namespace,
+		contentType: "application/json",
+		body:        toJSON(configurations),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// UpdateAirConfig updates SORACOM Air configurations for a group
+func (ac *APIClient) UpdateAirConfig(groupID string, airConfig *AirConfig) (*Group, error) {
+	params := &apiParams{
+		method:      "PUT",
+		path:        "/v1/groups/" + groupID + "/configuration/SoracomAir",
+		contentType: "application/json",
+		body:        airConfig.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// UpdateBeamTCPConfig updates SORACOM Beam configurations for a group
+func (ac *APIClient) UpdateBeamTCPConfig(groupID, entryPoint string, beamTCPConfig *BeamTCPConfig) (*Group, error) {
+	params := &apiParams{
+		method:      "PUT",
+		path:        "/v1/groups/" + groupID + "/configuration/SoracomBeam",
+		contentType: "application/json",
+		body: toJSON([]GroupConfig{
+			GroupConfig{Key: entryPoint, Value: beamTCPConfig},
+		}),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// DeleteGroupConfiguration deletes a configuration for a group
+func (ac *APIClient) DeleteGroupConfiguration(groupID, namespace, name string) (*Group, error) {
+	params := &apiParams{
+		method: "DELETE",
+		path:   "/v1/groups/" + groupID + "/configuration/" + namespace + "/" + percentEncoding(name),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// UpdateGroupTags updates tags a group
+func (ac *APIClient) UpdateGroupTags(groupID string, tags []Tag) (*Group, error) {
+	params := &apiParams{
+		method:      "PUT",
+		path:        "/v1/groups/" + groupID + "/tags",
+		contentType: "application/json",
+		body:        toJSON(tags),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	group := parseGroup(resp)
+
+	return group, nil
+}
+
+// DeleteGroupTag deletes a tag for a group
+func (ac *APIClient) DeleteGroupTag(groupID, tagName string) error {
+	params := &apiParams{
+		method: "DELETE",
+		path:   "/v1/groups/" + groupID + "/tags/" + percentEncoding(tagName),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}

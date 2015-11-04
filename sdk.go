@@ -20,6 +20,9 @@ type Tag struct {
 	TagValue string `json:"tagValue"`
 }
 
+// Tags is a map of tag name and tag value
+type Tags map[string]string
+
 // TimestampMilli is ...
 type TimestampMilli struct {
 	time.Time
@@ -238,9 +241,9 @@ func (lso *ListSubscribersOptions) String() string {
 
 // RegisterSubscriberOptions keeps information for registering a subscriber
 type RegisterSubscriberOptions struct {
-	RegistrationSecret string            `json:"registrationSecret"`
-	GroupID            string            `json:"groupId"`
-	Tags               map[string]string `json:"tags"`
+	RegistrationSecret string `json:"registrationSecret"`
+	GroupID            string `json:"groupId"`
+	Tags               Tags   `json:"tags"`
 }
 
 // JSON retunrs a JSON representing RegisterSubscriberOptions object
@@ -260,28 +263,51 @@ type SessionStatus struct {
 
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
-	Apn                string            `json:"apn"`
-	CreatedTime        *TimestampMilli   `json:"createdTime"`
-	ExpiryTime         *TimestampMilli   `json:"expiryTime"`
-	GroupID            *string           `json:"groupId"`
-	Imsi               string            `json:"imsi"`
-	IPAddress          *string           `json:"ipAddress"`
-	LastModifiedTime   *TimestampMilli   `json:"lastModifiedTime"`
-	ModuleType         string            `json:"ModuleType"`
-	Msisdn             string            `json:"msisdn"`
-	OperatorID         string            `json:"operatorId"`
-	Plan               int               `json:"plan"`
-	SessionStatus      *SessionStatus    `json:"sessionStatus"`
-	Status             string            `json:"status"`
-	SpeedClass         string            `json:"type"`
-	Tags               map[string]string `json:"tags"`
-	TerminationEnabled bool              `json:"terminationEnabled"`
+	Apn                string          `json:"apn"`
+	CreatedTime        *TimestampMilli `json:"createdTime"`
+	ExpiryTime         *TimestampMilli `json:"expiryTime"`
+	GroupID            *string         `json:"groupId"`
+	Imsi               string          `json:"imsi"`
+	IPAddress          *string         `json:"ipAddress"`
+	LastModifiedTime   *TimestampMilli `json:"lastModifiedTime"`
+	ModuleType         string          `json:"ModuleType"`
+	Msisdn             string          `json:"msisdn"`
+	OperatorID         string          `json:"operatorId"`
+	Plan               int             `json:"plan"`
+	SessionStatus      *SessionStatus  `json:"sessionStatus"`
+	Status             string          `json:"status"`
+	SpeedClass         string          `json:"type"`
+	Tags               Tags            `json:"tags"`
+	TerminationEnabled bool            `json:"terminationEnabled"`
 }
 
 // PaginationKeys holds keys for pagination
 type PaginationKeys struct {
 	Prev string
 	Next string
+}
+
+func parseLinkHeader(linkHeader string) *PaginationKeys {
+	var pk *PaginationKeys
+	if linkHeader != "" {
+		pk = &PaginationKeys{}
+		links := strings.Split(linkHeader, ",")
+		for _, link := range links {
+			s := strings.Split(link, ";")
+			url, err := url.Parse(strings.Trim(s[0], "<>"))
+			if err != nil {
+				continue
+			}
+			lek := url.Query()["last_evaluated_key"][0]
+			rel := strings.Split(s[1], "=")[1]
+			if rel == "prev" {
+				pk.Prev = lek
+			} else if rel == "next" {
+				pk.Next = lek
+			}
+		}
+	}
+	return pk
 }
 
 func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *PaginationKeys, error) {
@@ -309,26 +335,8 @@ func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *Paginatio
 		return nil, nil, err
 	}
 
-	var pk *PaginationKeys
 	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
-	if linkHeader != "" {
-		pk = &PaginationKeys{}
-		links := strings.Split(linkHeader, ",")
-		for _, link := range links {
-			s := strings.Split(link, ";")
-			url, err := url.Parse(strings.Trim(s[0], "<>"))
-			if err != nil {
-				continue
-			}
-			lek := url.Query()["last_evaluated_key"][0]
-			rel := strings.Split(s[1], "=")[1]
-			if rel == "prev" {
-				pk.Prev = lek
-			} else if rel == "next" {
-				pk.Next = lek
-			}
-		}
-	}
+	pk := parseLinkHeader(linkHeader)
 
 	return subs, pk, nil
 }
@@ -544,6 +552,169 @@ func parseExportBeamStatsResponse(resp *http.Response) *exportBeamStatsResponse 
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&r)
 	return &r
+}
+
+// ConfigNamespace is a type of namespace of a configuration
+type ConfigNamespace string
+
+// Group keeps information about a group
+type Group struct {
+	Configuration    map[ConfigNamespace]interface{} `json:"configuration"`
+	CreatedTime      *TimestampMilli                 `json:"createdTime"`
+	GroupID          string                          `json:"groupId"`
+	LastModifiedTime *TimestampMilli                 `json:"lastModifiedTime"`
+	OperatorID       string                          `json:"operatorId"`
+	Tags             Tags                            `json:"tags"`
+}
+
+// ListGroupsOptions holds options for APIClient.ListGroups()
+type ListGroupsOptions struct {
+	TagName           string
+	TagValue          string
+	TagValueMatchMode TagValueMatchMode
+	Limit             int
+	LastEvaluatedKey  string
+}
+
+func (lso *ListGroupsOptions) String() string {
+	var s = make([]string, 0, 10)
+	if lso.TagName != "" {
+		s = append(s, "tag_name="+lso.TagName)
+	}
+	if lso.TagValue != "" {
+		s = append(s, "tag_value="+lso.TagValue)
+	}
+	if lso.TagValueMatchMode != MatchModeUnspecified {
+		s = append(s, "tag_value_match_mode="+lso.TagValueMatchMode.String())
+	}
+	if lso.Limit != 0 {
+		s = append(s, "limit="+strconv.Itoa(lso.Limit))
+	}
+	if lso.LastEvaluatedKey != "" {
+		s = append(s, "last_evaluated_key="+lso.LastEvaluatedKey)
+	}
+	return strings.Join(s, "&")
+}
+
+func parseListGroupsResponse(resp *http.Response) ([]Group, *PaginationKeys, error) {
+	groups := make([]Group, 0, 10)
+	dec := json.NewDecoder(resp.Body)
+
+	// read open bracket
+	_, err := dec.Token()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for dec.More() {
+		var g Group
+		err = dec.Decode(&g)
+		if err != nil {
+			continue
+		}
+		groups = append(groups, g)
+	}
+
+	// read close bracket
+	_, err = dec.Token()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	pk := parseLinkHeader(linkHeader)
+
+	return groups, pk, nil
+}
+
+type createGroupRequest struct {
+	Tags Tags `json:"tags"`
+}
+
+func (r *createGroupRequest) JSON() string {
+	return toJSON(r)
+}
+
+func parseGroup(resp *http.Response) *Group {
+	var g Group
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&g)
+	return &g
+}
+
+// ListSubscribersInGroupOptions holds options for APIClient.ListSubscribersInGroup()
+type ListSubscribersInGroupOptions struct {
+	Limit            int
+	LastEvaluatedKey string
+}
+
+func (lso *ListSubscribersInGroupOptions) String() string {
+	var s = make([]string, 0, 10)
+	if lso.Limit != 0 {
+		s = append(s, "limit="+strconv.Itoa(lso.Limit))
+	}
+	if lso.LastEvaluatedKey != "" {
+		s = append(s, "last_evaluated_key="+lso.LastEvaluatedKey)
+	}
+	return strings.Join(s, "&")
+}
+
+// GroupConfig holds a pair of a key and a value
+type GroupConfig struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
+// AirConfig holds configuration parameters for SORACOM Air
+type AirConfig struct {
+	UseCustomDNS bool
+	DNSServers   []string
+}
+
+// JSON converts AirConfig into JSON string
+func (ac *AirConfig) JSON() string {
+	return toJSON([]GroupConfig{
+		GroupConfig{Key: "useCustomDns", Value: ac.UseCustomDNS},
+		GroupConfig{Key: "dnsServers", Value: ac.DNSServers},
+	})
+}
+
+// CustomHeader holds Action, Key and Value for a custom header
+type CustomHeader struct {
+	Action string `json:"action"`
+	Key    string `json:"headerKey"`
+	Value  string `json:"headerValue"`
+}
+
+// BeamTCPConfig holds SORACOM Beam TCP entry point configurations
+type BeamTCPConfig struct {
+	Name                string `json:"name"`
+	Destination         string `json:"destination"`
+	Enabled             bool   `json:"enabled"`
+	AddSubscriberHeader bool   `json:"addSubscriberHeader"`
+	AddSignature        bool   `json:"addSignature"`
+	PSK                 string `json:"psk"`
+}
+
+// BeamMQTTConfig holds SORACOM Beam MQTT entry point configurations
+type BeamMQTTConfig struct {
+	Name                string `json:"name"`
+	Destination         string `json:"destination"`
+	Enabled             bool   `json:"enabled"`
+	AddSubscriberHeader bool   `json:"addSubscriberHeader"`
+	Username            string `json:"username"`
+	Password            string `json:"password"`
+}
+
+// BeamHTTPConfig holds SORACOM Beam HTTP entry point configurations
+type BeamHTTPConfig struct {
+	Name                string                  `json:"name"`
+	Destination         string                  `json:"destination"`
+	Enabled             bool                    `json:"enabled"`
+	AddSubscriberHeader bool                    `json:"addSubscriberHeader"`
+	AddSignature        bool                    `json:"addSignature"`
+	CustomHeaders       map[string]CustomHeader `json:"customHeaders"`
+	PSK                 string                  `json:"psk"`
 }
 
 func tagsToJSON(tags []Tag) string {

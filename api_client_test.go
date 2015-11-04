@@ -796,3 +796,319 @@ func TestExportBeamStats(t *testing.T) {
 
 	fmt.Println(url.String())
 }
+
+func TestListGroups(t *testing.T) {
+	groups, pk, err := apiClient.ListGroups(nil)
+	if err != nil {
+		t.Fatalf("ListGroups() failed: %v", err.Error())
+	}
+	if pk != nil {
+		t.Fatalf("PaginationKey has been unexpectedly returned even limit has not been specified")
+	}
+	if len(groups) == 0 {
+		t.Fatalf("At least 1 group is required.")
+	}
+}
+
+func TestCreateGroup(t *testing.T) {
+	g1, err := apiClient.CreateGroup(Tags{})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(g1.GroupID)
+
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	g2, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(g2.GroupID)
+}
+
+func TestCreateGroupWithName(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroupWithName(name)
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+	if group.Tags["name"] != name {
+		t.Fatalf("Created a group with wrong name")
+	}
+}
+
+func TestDeleteGroup(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroupWithName(name)
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+
+	err = apiClient.DeleteGroup(group.GroupID)
+	if err != nil {
+		t.Fatalf("DeleteGroup() failed: %v", err.Error())
+	}
+}
+
+func TestGetGroup(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	groupCreated, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(groupCreated.GroupID)
+
+	groupFound, err := apiClient.GetGroup(groupCreated.GroupID)
+	if err != nil {
+		t.Fatalf("GetGroup() failed: %v", err.Error())
+	}
+
+	if groupCreated.GroupID != groupFound.GroupID {
+		t.Fatalf("Wrong group found")
+	}
+}
+
+func TestListSubscribersInGroup(t *testing.T) {
+	groups, pk, err := apiClient.ListGroups(nil)
+	if err != nil {
+		t.Fatalf("ListGroups() failed: %v", err.Error())
+	}
+	if pk != nil {
+		t.Fatalf("PaginationKey has been unexpectedly returned even limit has not been specified")
+	}
+	if len(groups) == 0 {
+		t.Fatalf("At least 1 group is required.")
+	}
+
+	found := false
+	for _, g := range groups {
+		subs, _, err := apiClient.ListSubscribersInGroup(g.GroupID, nil)
+		if err != nil {
+			t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
+		}
+		if len(subs) > 0 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("At least 1 subscriber is required to be a group")
+	}
+}
+
+func TestUpdateGroupConfigurations(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	beamTCPConfig := &BeamTCPConfig{
+		Name:                "TCP Config Name 1",
+		Destination:         "tcps://tcp.example.com:1234",
+		Enabled:             true,
+		AddSubscriberHeader: true,
+		AddSignature:        true,
+		PSK:                 "Pre-Shared Key",
+	}
+
+	g1, err := apiClient.UpdateGroupConfigurations(group.GroupID, "SoracomAir", []GroupConfig{
+		GroupConfig{Key: "useCustomDns", Value: true},
+		GroupConfig{Key: "dnsServers", Value: []string{"8.8.8.8", "8.8.4.4"}},
+	})
+	if err != nil {
+		t.Fatalf("UpdateGroupConfigurations() failed: %v", err.Error())
+	}
+	airCfg := g1.Configuration["SoracomAir"].(map[string]interface{})
+	if airCfg["useCustomDns"].(bool) != true {
+		t.Fatalf("Unexpected value found")
+	}
+	if len(airCfg["dnsServers"].([]interface{})) != 2 {
+		t.Fatalf("Unexpected value found")
+	}
+
+	g2, err := apiClient.UpdateGroupConfigurations(group.GroupID, "SoracomBeam", []GroupConfig{
+		GroupConfig{Key: "tcp://beam.soracom.io:8023", Value: beamTCPConfig},
+	})
+	if err != nil {
+		t.Fatalf("UpdateGroupConfigurations() failed: %v", err.Error())
+	}
+	beamCfg := g2.Configuration["SoracomBeam"].(map[string]interface{})
+	cfg := beamCfg["tcp://beam.soracom.io:8023"].(map[string]interface{})
+	cfgName := cfg["name"].(string)
+	if cfgName != "TCP Config Name 1" {
+		t.Fatalf("Unexpected value found")
+	}
+}
+
+func TestUpdateAirConfig(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	airConfig1 := &AirConfig{
+		UseCustomDNS: true,
+		DNSServers: []string{
+			"8.8.8.8",
+			"8.8.4.4",
+		},
+	}
+
+	g1, err := apiClient.UpdateAirConfig(group.GroupID, airConfig1)
+	if err != nil {
+		t.Fatalf("UpdateAirConfig() failed: %v", err.Error())
+	}
+	air1 := g1.Configuration["SoracomAir"].(map[string]interface{})
+	if air1["useCustomDns"].(bool) != true {
+		t.Fatalf("Unexpected value found")
+	}
+	if len(air1["dnsServers"].([]interface{})) != 2 {
+		t.Fatalf("Unexpected value found")
+	}
+
+	airConfig2 := &AirConfig{
+		UseCustomDNS: false,
+		DNSServers: []string{
+			"0.0.0.0",
+		},
+	}
+
+	g2, err := apiClient.UpdateAirConfig(group.GroupID, airConfig2)
+	if err != nil {
+		t.Fatalf("UpdateAirConfig() failed: %v", err.Error())
+	}
+	air2 := g2.Configuration["SoracomAir"].(map[string]interface{})
+	if air2["useCustomDns"].(bool) != false {
+		t.Fatalf("Unexpected value found")
+	}
+	if len(air2["dnsServers"].([]interface{})) != 1 {
+		t.Fatalf("Unexpected value found")
+	}
+}
+
+func TestUpdateBeamTCPConfig(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	entryPoint1 := "tcp://beam.soracom.io:8023"
+	beamTCPConfig1 := &BeamTCPConfig{
+		Name:                "TCP Config Name 1",
+		Destination:         "tcps://tcp.example.com:1234",
+		Enabled:             true,
+		AddSubscriberHeader: true,
+		AddSignature:        true,
+		PSK:                 "Pre-Shared Key",
+	}
+
+	g1, err := apiClient.UpdateBeamTCPConfig(group.GroupID, entryPoint1, beamTCPConfig1)
+	if err != nil {
+		t.Fatalf("UpdateBeamTCPConfig() failed: %v", err.Error())
+	}
+	beam1 := g1.Configuration["SoracomBeam"].(map[string]interface{})
+	cfg1 := beam1["tcp://beam.soracom.io:8023"].(map[string]interface{})
+	cfgName := cfg1["name"].(string)
+	if cfgName != "TCP Config Name 1" {
+		t.Fatalf("Unexpected value found")
+	}
+}
+
+func TestDeleteGroupConfiguration(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	entryPoint1 := "tcp://beam.soracom.io:8023"
+	beamTCPConfig1 := &BeamTCPConfig{
+		Name:                "TCP Config Name 1",
+		Destination:         "tcps://tcp.example.com:1234",
+		Enabled:             true,
+		AddSubscriberHeader: true,
+		AddSignature:        true,
+		PSK:                 "Pre-Shared Key",
+	}
+
+	g1, err := apiClient.UpdateBeamTCPConfig(group.GroupID, entryPoint1, beamTCPConfig1)
+	if err != nil {
+		t.Fatalf("UpdateBeamTCPConfig() failed: %v", err.Error())
+	}
+	beam1 := g1.Configuration["SoracomBeam"].(map[string]interface{})
+	cfg1 := beam1[entryPoint1].(map[string]interface{})
+	cfgName := cfg1["name"].(string)
+	if cfgName != "TCP Config Name 1" {
+		t.Fatalf("Unexpected value found")
+	}
+
+	g2, err := apiClient.DeleteGroupConfiguration(group.GroupID, "SoracomBeam", entryPoint1)
+	if err != nil {
+		t.Fatalf("DeleteGroupConfiguration() failed: %v", err.Error())
+	}
+	if g2.Configuration["SoracomBeam"] != nil {
+		t.Fatalf("Group configuration was not deleted unexpectedly")
+	}
+}
+
+func TestUpdateGroupTags(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	g, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
+		Tag{TagName: "name1", TagValue: "value1"},
+		Tag{TagName: "name2", TagValue: "value2"},
+	})
+	if err != nil {
+		t.Fatalf("UpdateGroupTags() failed: %v", err.Error())
+	}
+
+	if len(g.Tags) != 4 {
+		t.Fatalf("The group should have 4 tags (name, test-tag, name1, name2)")
+	}
+}
+
+func TestDeleteGroupTag(t *testing.T) {
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	group, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
+	if err != nil {
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
+	}
+	defer apiClient.DeleteGroup(group.GroupID)
+
+	g1, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
+		Tag{TagName: "name1", TagValue: "value1"},
+		Tag{TagName: "name2", TagValue: "value2"},
+	})
+	if err != nil {
+		t.Fatalf("UpdateGroupTags() failed: %v", err.Error())
+	}
+
+	if len(g1.Tags) != 4 {
+		t.Fatalf("The group should have 4 tags (name, test-tag, name1, name2)")
+	}
+
+	err = apiClient.DeleteGroupTag(group.GroupID, "name1")
+	if err != nil {
+		t.Fatalf("DeleteGroupTag() failed: %v", err.Error())
+	}
+
+	g2, err := apiClient.GetGroup(g1.GroupID)
+	if err != nil {
+		t.Fatalf("GetGroup() failed: %v", err.Error())
+	}
+
+	if len(g2.Tags) != 3 {
+		t.Fatalf("The group should now have 3 tag")
+	}
+}
