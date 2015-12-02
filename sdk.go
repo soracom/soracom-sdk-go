@@ -709,14 +709,33 @@ type BeamTCPConfig struct {
 	PSK                 string `json:"psk"`
 }
 
-// BeamMQTTConfig holds SORACOM Beam MQTT entry point configurations
-type BeamMQTTConfig struct {
+// BeamUDPConfig holds SORACOM Beam UDP entry point configurations
+type BeamUDPConfig struct {
 	Name                string `json:"name"`
 	Destination         string `json:"destination"`
 	Enabled             bool   `json:"enabled"`
 	AddSubscriberHeader bool   `json:"addSubscriberHeader"`
-	Username            string `json:"username"`
-	Password            string `json:"password"`
+	AddSignature        bool   `json:"addSignature"`
+	PSK                 string `json:"psk"`
+}
+
+// ClientCerts consists of a CA certificate,
+type ClientCerts struct {
+	CA         string `json:"ca"`
+	Cert       string `json:"cert"`
+	PrivateKey string `json:"key"`
+}
+
+// BeamMQTTConfig holds SORACOM Beam MQTT entry point configurations
+type BeamMQTTConfig struct {
+	Name                  string                 `json:"name"`
+	Destination           string                 `json:"destination"`
+	Enabled               bool                   `json:"enabled"`
+	AddSubscriberHeader   bool                   `json:"addSubscriberHeader"`
+	Username              string                 `json:"username"`
+	Password              string                 `json:"password"`
+	UseClientCertificates string                 `json:"useClientCert"`
+	ClientCertificates    map[string]ClientCerts `json:"clientCerts"`
 }
 
 // BeamHTTPConfig holds SORACOM Beam HTTP entry point configurations
