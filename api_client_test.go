@@ -1112,3 +1112,155 @@ func TestDeleteGroupTag(t *testing.T) {
 		t.Fatalf("The group should now have 3 tag")
 	}
 }
+
+func TestListEventHandlers(t *testing.T) {
+	eventHandlers, err := apiClient.ListEventHandlers(nil)
+	if err != nil {
+		t.Fatalf("ListEventHandlers() failed: %v", err.Error())
+	}
+	if len(eventHandlers) == 0 {
+		t.Fatalf("At least 1 event handler is required.")
+	}
+}
+
+func TestCreateEventHandler(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(nil)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
+	}
+	if len(subs) < 1 {
+		t.Fatalf("Require at least 1 subscriber")
+	}
+	imsi := subs[0].Imsi
+
+	o := &CreateEventHandlerOptions{
+		TargetImsi:  &imsi,
+		Status:      "active",
+		Name:        "Test Event handler Name",
+		Description: "Test Event Handler Description",
+		RuleConfig: RuleConfig{
+			Type: EventHandlerRuleTypeDailyTraffic,
+			Properties: Properties{
+				"inactiveTimeoutDateConst":  "BEGINNING_OF_NEXT_MONTH",
+				"limitTotalTrafficMegaByte": "1000",
+			},
+		},
+		ActionConfigList: []ActionConfig{
+			ActionConfig{
+				Type: EventHandlerActionTypeChangeSpeedClass,
+				Properties: Properties{
+					"speedClass":             "s1.minimum",
+					"executionDateTimeConst": "IMMEDIATELY",
+				},
+			},
+		},
+	}
+	err = apiClient.CreateEventHandler(o)
+	if err != nil {
+		t.Fatalf("CreateEventHandler() failed: %v", err.Error())
+	}
+	//defer apiClient.DeleteEventHandler(eh1.HandlerID)
+
+}
+
+func TestListEventHandlersForSubscriber(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(nil)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
+	}
+	if len(subs) < 1 {
+		t.Fatalf("Require at least 1 subscriber")
+	}
+	imsi := subs[0].Imsi
+
+	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
+	}
+
+	fmt.Println(eventHandlers)
+}
+
+func TestDeleteEventHandler(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(nil)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
+	}
+	if len(subs) < 1 {
+		t.Fatalf("Require at least 1 subscriber")
+	}
+	imsi := subs[0].Imsi
+
+	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
+	}
+
+	id := eventHandlers[len(eventHandlers)-1].HandlerID
+	err = apiClient.DeleteEventHandler(id)
+	if err != nil {
+		t.Fatalf("DeleteEventHandler() failed: %v", err.Error())
+	}
+}
+
+func TestGetEventHandler(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(nil)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
+	}
+	if len(subs) < 1 {
+		t.Fatalf("Require at least 1 subscriber")
+	}
+	imsi := subs[0].Imsi
+
+	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
+	}
+
+	id := eventHandlers[len(eventHandlers)-1].HandlerID
+	eh, err := apiClient.GetEventHandler(id)
+	if err != nil {
+		t.Fatalf("GetEventHandler() failed: %v", err.Error())
+	}
+
+	fmt.Println(eh)
+}
+
+func TestUpdateEventHandler(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(nil)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
+	}
+	if len(subs) < 1 {
+		t.Fatalf("Require at least 1 subscriber")
+	}
+	imsi := subs[0].Imsi
+
+	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
+	}
+
+	id := eventHandlers[len(eventHandlers)-1].HandlerID
+	eh, err := apiClient.GetEventHandler(id)
+	if err != nil {
+		t.Fatalf("GetEventHandler() failed: %v", err.Error())
+	}
+
+	updatedName := fmt.Sprintf("Updated Name %d", time.Now().Unix())
+	eh.Name = updatedName
+	err = apiClient.UpdateEventHandler(eh)
+	if err != nil {
+		t.Fatalf("UpdateEventHandler() failed: %v", err.Error())
+	}
+
+	eh2, err := apiClient.GetEventHandler(id)
+	if err != nil {
+		t.Fatalf("GetEventHandler() failed: %v", err.Error())
+	}
+
+	if eh2.Name != updatedName {
+		t.Fatalf("Event handler has not been updated correctly")
+	}
+}
