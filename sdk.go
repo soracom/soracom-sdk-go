@@ -669,10 +669,19 @@ type GroupConfig struct {
 	Value interface{} `json:"value"`
 }
 
+// MetaData holds configuration for SORACOM Air Metadata
+type MetaData struct {
+	Enabled     bool   `json:"enabled"`
+	ReadOnly    bool   `json:"readonly"`
+	AllowOrigin string `json:"allowOrigin"`
+}
+
 // AirConfig holds configuration parameters for SORACOM Air
 type AirConfig struct {
-	UseCustomDNS bool
-	DNSServers   []string
+	UseCustomDNS bool     `json:"useCustomDns"`
+	DNSServers   []string `json:"dnsServers"`
+	MetaData     MetaData `json:"metadata"`
+	UserData     string   `json:"userdata"`
 }
 
 // JSON converts AirConfig into JSON string
