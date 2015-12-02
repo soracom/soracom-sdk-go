@@ -279,7 +279,7 @@ type Subscriber struct {
 	Plan               int             `json:"plan"`
 	SessionStatus      *SessionStatus  `json:"sessionStatus"`
 	Status             string          `json:"status"`
-	SpeedClass         string          `json:"type"`
+	SpeedClass         string          `json:"speedClass"`
 	Tags               Tags            `json:"tags"`
 	TerminationEnabled bool            `json:"terminationEnabled"`
 }
@@ -438,16 +438,16 @@ type SpeedClass string
 
 const (
 	// SpeedClassS1Minimum is s1.minimum
-	SpeedClassS1Minimum = "s1.minimum"
+	SpeedClassS1Minimum SpeedClass = "s1.minimum"
 
 	// SpeedClassS1Slow is s1.slow
-	SpeedClassS1Slow = "s1.slow"
+	SpeedClassS1Slow SpeedClass = "s1.slow"
 
 	// SpeedClassS1Standard is s1.standard
-	SpeedClassS1Standard = "s1.standard"
+	SpeedClassS1Standard SpeedClass = "s1.standard"
 
 	// SpeedClassS1Fast is s1.fast
-	SpeedClassS1Fast = "s1.fast"
+	SpeedClassS1Fast SpeedClass = "s1.fast"
 )
 
 // AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
