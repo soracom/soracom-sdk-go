@@ -848,3 +848,129 @@ func (ac *APIClient) DeleteGroupTag(groupID, tagName string) error {
 
 	return nil
 }
+
+// ListEventHandlers lists event handlers for the operator
+func (ac *APIClient) ListEventHandlers(options *ListEventHandlersOptions) ([]EventHandler, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/event_handlers",
+	}
+	if options != nil {
+		params.query = options.String()
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	eventHandlers, err := parseListEventHandlersResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return eventHandlers, nil
+}
+
+// CreateEventHandler creates an event handler
+func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/event_handlers",
+		contentType: "application/json",
+		body:        options.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	/*
+		eventHandler, err := parseEventHandler(resp)
+		if err != nil {
+			return nil, err
+		}
+		return eventHandler, nil
+	*/
+
+	return nil
+}
+
+// ListEventHandlersForSubscriber creates an event handler with the specified options
+func (ac *APIClient) ListEventHandlersForSubscriber(imsi string) ([]EventHandler, error) {
+	params := &apiParams{
+		method:      "GET",
+		path:        "/v1/event_handlers/subscribers/" + imsi,
+		contentType: "application/json",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	eventHandlers, err := parseListEventHandlersResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return eventHandlers, nil
+}
+
+// DeleteEventHandler deletes the specified event handler
+func (ac *APIClient) DeleteEventHandler(handlerID string) error {
+	params := &apiParams{
+		method: "DELETE",
+		path:   "/v1/event_handlers/" + handlerID,
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// GetEventHandler gets the specified event handler
+func (ac *APIClient) GetEventHandler(handlerID string) (*EventHandler, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/event_handlers/" + handlerID,
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	eventHandler, err := parseEventHandler(resp)
+	if err != nil {
+		return nil, err
+	}
+	return eventHandler, nil
+}
+
+// UpdateEventHandler updates the specified event handler
+func (ac *APIClient) UpdateEventHandler(eh *EventHandler) error {
+	params := &apiParams{
+		method:      "PUT",
+		path:        "/v1/event_handlers/" + eh.HandlerID,
+		contentType: "application/json",
+		body:        eh.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}

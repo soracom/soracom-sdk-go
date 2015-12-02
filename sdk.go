@@ -23,6 +23,9 @@ type Tag struct {
 // Tags is a map of tag name and tag value
 type Tags map[string]string
 
+// Properties is a map of property name and propaty value
+type Properties map[string]string
+
 // TimestampMilli is ...
 type TimestampMilli struct {
 	time.Time
@@ -715,6 +718,148 @@ type BeamHTTPConfig struct {
 	AddSignature        bool                    `json:"addSignature"`
 	CustomHeaders       map[string]CustomHeader `json:"customHeaders"`
 	PSK                 string                  `json:"psk"`
+}
+
+// EventHandlerRuleType is a type of event hander's rule
+type EventHandlerRuleType string
+
+const (
+	// EventHandlerRuleTypeUnspecified means that the type field in RuleConfig has not been specified
+	EventHandlerRuleTypeUnspecified EventHandlerRuleType = ""
+
+	// EventHandlerRuleTypeDailyTraffic is a rule type to invoke actions when data traffic for a day for a subscriber exceeds the specified limit
+	EventHandlerRuleTypeDailyTraffic EventHandlerRuleType = "DailyTrafficRule"
+
+	// EventHandlerRuleTypeMonthlyTraffic is a rule type to invoke actions when data traffic for a month for a subscriber exceeds the specified limit
+	EventHandlerRuleTypeMonthlyTraffic EventHandlerRuleType = "MonthlyTraffic"
+
+	// EventHandlerRuleTypeCumulativeTraffic is a rule type to invoke actions when cumulative data traffic for a subscriber exceeds the specified limit
+	EventHandlerRuleTypeCumulativeTraffic EventHandlerRuleType = "CumulativeTraffic"
+
+	// EventHandlerRuleTypeDailyTotalTraffic is a rule type to invoke actions when total data traffic for a day for all subscribers exceeds the specified limit
+	EventHandlerRuleTypeDailyTotalTraffic EventHandlerRuleType = "DailyTotalTraffic"
+
+	// EventHandlerRuleTypeMonthlyTotalTraffic is a rule type to invoke actions when total data traffic for a month for all subscribers exceeds the specified limit
+	EventHandlerRuleTypeMonthlyTotalTraffic EventHandlerRuleType = "MonthlyTotalTraffic"
+
+	// EventHandlerRuleTypeSubscriberStatusChanged is a rule type to invoke actions when status of a subscriber has been changed
+	EventHandlerRuleTypeSubscriberStatusChanged EventHandlerRuleType = "SubscriberStatusChanged"
+
+	// EventHandlerRuleTypeSubscriberSpeedClassChanged is a rule type to invoke actions when speed class of a subscriber has been changed
+	EventHandlerRuleTypeSubscriberSpeedClassChanged EventHandlerRuleType = "SubscriberSpeedClassChanged"
+)
+
+// RuleConfig contains a condition to invoke actions
+type RuleConfig struct {
+	Type       EventHandlerRuleType `json:"type"`
+	Properties Properties           `json:"properties"`
+}
+
+// EventHandlerActionType is a type of event hander's action
+type EventHandlerActionType string
+
+const (
+	// EventHandlerActionTypeUnspecified means that the type field in ActionConfigList has not been specified
+	EventHandlerActionTypeUnspecified EventHandlerActionType = ""
+
+	// EventHandlerActionTypeChangeSpeedClass indicates a type of action to be invoked to change speed class for a subscriber once a condition is satisfied
+	EventHandlerActionTypeChangeSpeedClass EventHandlerActionType = "ChangeSpeedClassAction"
+
+	// EventHandlerActionTypeSendMail indicates a type of action to be invoked to send an email once a condition is satisfied
+	EventHandlerActionTypeSendMail EventHandlerActionType = "SendMailAction"
+
+	// EventHandlerActionTypeInvokeAWSLambda indicates a type of action to be invoked to invoke AWS Lambda function once a condition is satisfied
+	EventHandlerActionTypeInvokeAWSLambda EventHandlerActionType = "InvokeAWSLambdaAction"
+)
+
+// ActionConfig contains an action to be invoked when a condition is satisfied
+type ActionConfig struct {
+	Type       EventHandlerActionType `json:"type"`
+	Properties Properties             `json:"properties"`
+}
+
+// EventHandler keeps information about an event handler
+type EventHandler struct {
+	HandlerID        string         `json:"handlerId"`
+	TargetImsi       *string        `json:"targetImsi"`
+	TargetOperatorID *string        `json:"targetOperatorId"`
+	TargetTag        *Tags          `json:"targetTag"`
+	TargetGroupID    *string        `json:"targetGroupId"`
+	Name             string         `json:"name"`
+	Description      string         `json:"description"`
+	RuleConfig       RuleConfig     `json:"ruleConfig"`
+	Status           string         `json:"status"`
+	ActionConfigList []ActionConfig `json:"actionConfigList"`
+}
+
+// JSON converts Eventhandler into a JSON string
+func (o *EventHandler) JSON() string {
+	return toJSON(o)
+}
+
+// ListEventHandlersOptions holds options for APIClient.ListEventHandlers()
+type ListEventHandlersOptions struct {
+	Target string
+}
+
+func (leho *ListEventHandlersOptions) String() string {
+	return leho.Target
+}
+
+func parseListEventHandlersResponse(resp *http.Response) ([]EventHandler, error) {
+	eventHandlers := make([]EventHandler, 0, 10)
+	dec := json.NewDecoder(resp.Body)
+
+	// read open bracket
+	_, err := dec.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	for dec.More() {
+		var eh EventHandler
+		err = dec.Decode(&eh)
+		if err != nil {
+			continue
+		}
+		eventHandlers = append(eventHandlers, eh)
+	}
+
+	// read close bracket
+	_, err = dec.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	return eventHandlers, nil
+}
+
+func parseEventHandler(resp *http.Response) (*EventHandler, error) {
+	dec := json.NewDecoder(resp.Body)
+	var eh EventHandler
+	err := dec.Decode(&eh)
+	if err != nil {
+		return nil, err
+	}
+	return &eh, nil
+}
+
+// CreateEventHandlerOptions keeps information to create an event handler
+type CreateEventHandlerOptions struct {
+	TargetImsi       *string        `json:"targetImsi"`
+	TargetOperatorID *string        `json:"targetOperatorId"`
+	TargetTag        *Tags          `json:"targetTag"`
+	TargetGroupID    *string        `json:"targetGroupId"`
+	Name             string         `json:"name"`
+	Description      string         `json:"description"`
+	RuleConfig       RuleConfig     `json:"ruleConfig"`
+	Status           string         `json:"status"`
+	ActionConfigList []ActionConfig `json:"actionConfigList"`
+}
+
+// JSON converts CreateEventhandlerOptions into a JSON string
+func (o *CreateEventHandlerOptions) JSON() string {
+	return toJSON(o)
 }
 
 func tagsToJSON(tags []Tag) string {
