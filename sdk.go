@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -886,4 +887,13 @@ func toJSON(x interface{}) string {
 		return ""
 	}
 	return string(bodyBytes)
+}
+
+func dumpHTTPResponse(resp *http.Response) {
+	dump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(dump))
 }
