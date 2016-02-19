@@ -49,3 +49,29 @@ func main() {
 }
 
 ```
+
+メタデータサービスにも対応しています。
+メタデータサービスを利用するには `soracom.NewMetadataClient(nil)` を呼び出して MetadataClient を作成します。
+
+```
+package main
+
+import (
+	"fmt"
+	"github.com/soracom/soracom-sdk-go"
+)
+
+func main() {
+	mc := soracom.NewMetadataClient(nil)
+	sub, err := mc.GetSubscriber()
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		return
+	}
+	fmt.Printf("subscriber: %v", sub)
+}
+```
+
+もう少し詳しい使い方は
+http://qiita.com/bearmini/items/6e3f66bc0ef846c8d197
+を参照してください。
