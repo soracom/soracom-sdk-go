@@ -1,7 +1,9 @@
 package soracom
 
 import (
+	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -9,30 +11,312 @@ import (
 )
 
 var (
-	apiClient *APIClient
+	apiClient          *APIClient
+	email              string
+	password           string
+	createdSubscribers []CreatedSubscriber
 )
 
-func TestAuth(t *testing.T) {
-	email := os.Getenv("SORACOM_EMAIL")
-	password := os.Getenv("SORACOM_PASSWORD")
-	endpoint := os.Getenv("SORACOM_ENDPOINT")
+const (
+	defaultEndpointForTest = "https://api-sandbox.soracom.io"
+	nSIM                   = 25
+)
 
-	if email == "" {
-		t.Fatal("SORACOM_EMAIL env var is required")
+func TestMain(m *testing.M) {
+	err := setup()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
+	os.Exit(m.Run())
+}
+
+func setup() error {
+	rand.Seed(time.Now().Unix())
+	apiClient = setupAPIClient()
+
+	email = os.Getenv("SORACOM_EMAIL_FOR_TEST")
+	if email == "" {
+		return errors.New("SORACOM_EMAIL_FOR_TEST env var is required")
+	}
+	email = randomizeEmail(email)
+	if email == "" {
+		return errors.New("SORACOM_EMAIL_FOR_TEST might be in invalid format")
+	}
+
+	password = os.Getenv("SORACOM_PASSWORD_FOR_TEST")
 	if password == "" {
-		t.Fatal("SORACOM_PASSWORD env var is required")
+		return errors.New("SORACOM_PASSWORD_FOR_TEST env var is required")
+	}
+
+	err := signup()
+	if err != nil {
+		return err
+	}
+
+	err = auth()
+	if err != nil {
+		return err
+	}
+
+	err = registerPaymentMethod()
+	if err != nil {
+		return err
+	}
+
+	// auth again to update token
+	err = auth()
+	if err != nil {
+		return err
+	}
+
+	createdSubscribers = make([]CreatedSubscriber, 0, nSIM)
+	for i := 0; i < nSIM; i++ {
+		s, err := apiClient.CreateSubscriber()
+		if err != nil {
+			return err
+		}
+		createdSubscribers = append(createdSubscribers, *s)
+	}
+
+	err = registerSubscribers()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setupAPIClient() *APIClient {
+	endpoint := os.Getenv("SORACOM_ENDPOINT")
+	if endpoint == "" {
+		endpoint = defaultEndpointForTest
 	}
 
 	options := &APIClientOptions{
 		Endpoint: endpoint,
 	}
-	apiClient = NewAPIClient(options)
 
+	return NewAPIClient(options)
+}
+
+func randomizeEmail(email string) string {
+	s := strings.Split(email, "@")
+	if len(s) != 2 {
+		return ""
+	}
+
+	return s[0] + "+" + getRandomString(20) + "@" + s[1]
+}
+
+func getRandomString(size uint) string {
+	p := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+		"m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
+	s := ""
+	for i := uint(0); i < size; i++ {
+		s += p[rand.Intn(len(p))]
+	}
+	return s
+}
+
+func signup() error {
+	err := apiClient.CreateOperator(email, password)
+	if err != nil {
+		return err
+	}
+
+	authKeyID := os.Getenv("SORACOM_AUTHKEY_ID_FOR_TEST")
+	if authKeyID == "" {
+		return errors.New("SORACOM_AUTHKEY_ID_FOR_TEST env var is required")
+	}
+	authKey := os.Getenv("SORACOM_AUTHKEY_FOR_TEST")
+	if authKey == "" {
+		return errors.New("SORACOM_AUTHKEY_FOR_TEST env var is required")
+	}
+	token, err := apiClient.GetSignupToken(email, authKeyID, authKey)
+	if err != nil {
+		return err
+	}
+
+	err = apiClient.VerifyOperator(token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func auth() error {
 	err := apiClient.Auth(email, password)
 	if err != nil {
-		t.Fatalf("Auth() failed: %v", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func registerPaymentMethod() error {
+	wp := &PaymentMethodInfoWebPay{
+		Cvc:         "123",
+		ExpireMonth: 12,
+		ExpireYear:  20,
+		Name:        "SORAO TAMAGAWA",
+		Number:      "4242424242424242", // https://webpay.jp/docs/mock_cards
+	}
+	err := apiClient.RegisterPaymentMethodWebPay(wp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func registerSubscribers() error {
+	for i, cs := range createdSubscribers {
+		o := RegisterSubscriberOptions{
+			RegistrationSecret: cs.RegistrationSecret,
+			Tags:               Tags{},
+		}
+		if i%3 == 0 {
+			o.Tags["soracom-sdk-go-test"] = "foo"
+		}
+		if i%3 == 1 {
+			o.Tags["soracom-sdk-go-test"] = "hoge"
+		}
+		if i%3 == 2 {
+			o.Tags["soracom-sdk-go-test"] = "beam-stats"
+		}
+		_, err := apiClient.RegisterSubscriber(cs.Imsi, o)
+		if err != nil {
+			return err
+		}
+		if i%4 == 0 {
+			_, err := apiClient.ActivateSubscriber(cs.Imsi)
+			if err != nil {
+				return err
+			}
+		}
+		if i%4 == 1 {
+			_, err := apiClient.DeactivateSubscriber(cs.Imsi)
+			if err != nil {
+				return err
+			}
+		}
+		if i%5 == 0 {
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.minimum")
+			if err != nil {
+				return err
+			}
+		}
+		if i%5 == 1 {
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.slow")
+			if err != nil {
+				return err
+			}
+		}
+		if i%5 == 2 {
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.standard")
+			if err != nil {
+				return err
+			}
+		}
+		if i%5 == 3 {
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.fast")
+			if err != nil {
+				return err
+			}
+		}
+
+		for j := 0; j < 10; j++ {
+			t := time.Now().AddDate(0, 0, -10*j)
+			ts := t.UnixNano() / 1000 / 1000
+			err := apiClient.InsertAirStats(cs.Imsi, generateDummyAirStats(ts))
+			if err != nil {
+				return err
+			}
+		}
+
+		for k := 0; k < 10; k++ {
+			t := time.Now().AddDate(0, 0, -10*k)
+			ts := t.UnixNano() / 1000 / 1000
+			err := apiClient.InsertBeamStats(cs.Imsi, generateDummyBeamStats(ts))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func getRandomSpeedClass() SpeedClass {
+	switch rand.Intn(4) {
+	case 0:
+		return SpeedClassS1Minimum
+	case 1:
+		return SpeedClassS1Slow
+	case 2:
+		return SpeedClassS1Standard
+	case 3:
+		return SpeedClassS1Fast
+	}
+	return SpeedClassS1Standard
+}
+
+func generateDummyAirStats(ts int64) AirStats {
+	ub := rand.Intn(1000000)
+	up := ub / (rand.Intn(100) + 1)
+	db := rand.Intn(1000000)
+	dp := db / (rand.Intn(100) + 1)
+	t := make(map[SpeedClass]AirStatsForSpeedClass)
+	t[getRandomSpeedClass()] = AirStatsForSpeedClass{
+		UploadBytes:     uint64(ub),
+		UploadPackets:   uint64(up),
+		DownloadBytes:   uint64(db),
+		DownloadPackets: uint64(dp),
+	}
+	return AirStats{
+		Unixtime: uint64(ts),
+		Traffic:  t,
+	}
+}
+
+func getRandomBeamType() BeamType {
+	switch rand.Intn(11) {
+	case 0:
+		return BeamTypeInHTTP
+	case 1:
+		return BeamTypeInMQTT
+	case 2:
+		return BeamTypeInTCP
+	case 3:
+		return BeamTypeInUDP
+	case 4:
+		return BeamTypeOutHTTP
+	case 5:
+		return BeamTypeOutHTTPS
+	case 6:
+		return BeamTypeOutMQTT
+	case 7:
+		return BeamTypeOutMQTTS
+	case 8:
+		return BeamTypeOutTCP
+	case 9:
+		return BeamTypeOutTCPS
+	case 10:
+		return BeamTypeOutUDP
+	}
+	return BeamTypeInHTTP
+}
+
+func generateDummyBeamStats(ts int64) BeamStats {
+	t := make(map[BeamType]BeamStatsForType)
+	t[getRandomBeamType()] = BeamStatsForType{
+		Count: uint64(rand.Intn(1000)),
+	}
+	return BeamStats{
+		Unixtime: uint64(ts),
+		Traffic:  t,
 	}
 }
 
@@ -567,6 +851,25 @@ func TestEnableTermination(t *testing.T) {
 	if sub != nil && sub.Status == "terminated" {
 		t.Fatalf("Termination must not be done")
 	}
+
+	sub, err = apiClient.EnableSubscriberTermination(imsi)
+	if err != nil {
+		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
+	}
+	if sub.Imsi != imsi {
+		t.Fatalf("Found a subscriber which is not specified")
+	}
+	if !sub.TerminationEnabled {
+		t.Fatalf("Termination must be enabled")
+	}
+
+	sub, err = apiClient.TerminateSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("Termination must be completed successfully when termination is enabled")
+	}
+	if sub.Status != "terminated" {
+		t.Fatalf("Termination must be done")
+	}
 }
 
 func TestSetSubscriberExpiryTime(t *testing.T) {
@@ -778,35 +1081,18 @@ func TestGetBeamStats(t *testing.T) {
 func TestExportAirStats(t *testing.T) {
 	from := time.Now().AddDate(0, -6, 0)
 	to := time.Now()
-	url, err := apiClient.ExportAirStats(from, to, StatsPeriodMonth)
+	_, err := apiClient.ExportAirStats(from, to, StatsPeriodMonth)
 	if err != nil {
 		t.Fatalf("ExportAirStats() failed: %v", err.Error())
 	}
-
-	fmt.Println(url.String())
 }
 
 func TestExportBeamStats(t *testing.T) {
 	from := time.Now().AddDate(0, -6, 0)
 	to := time.Now()
-	url, err := apiClient.ExportBeamStats(from, to, StatsPeriodMonth)
+	_, err := apiClient.ExportBeamStats(from, to, StatsPeriodMonth)
 	if err != nil {
 		t.Fatalf("ExportBeamStats() failed: %v", err.Error())
-	}
-
-	fmt.Println(url.String())
-}
-
-func TestListGroups(t *testing.T) {
-	groups, pk, err := apiClient.ListGroups(nil)
-	if err != nil {
-		t.Fatalf("ListGroups() failed: %v", err.Error())
-	}
-	if pk != nil {
-		t.Fatalf("PaginationKey has been unexpectedly returned even limit has not been specified")
-	}
-	if len(groups) == 0 {
-		t.Fatalf("At least 1 group is required.")
 	}
 }
 
@@ -869,29 +1155,41 @@ func TestGetGroup(t *testing.T) {
 }
 
 func TestListSubscribersInGroup(t *testing.T) {
-	groups, pk, err := apiClient.ListGroups(nil)
+	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
+	groupCreated, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
 	if err != nil {
-		t.Fatalf("ListGroups() failed: %v", err.Error())
+		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	if pk != nil {
-		t.Fatalf("PaginationKey has been unexpectedly returned even limit has not been specified")
-	}
-	if len(groups) == 0 {
-		t.Fatalf("At least 1 group is required.")
+	defer apiClient.DeleteGroup(groupCreated.GroupID)
+
+	for _, cs := range createdSubscribers {
+		_, err := apiClient.SetSubscriberGroup(cs.Imsi, groupCreated.GroupID)
+		if err != nil {
+			t.Fatalf("SetSubscriberGroup() failed: %v", err.Error())
+		}
 	}
 
-	found := false
-	for _, g := range groups {
-		subs, _, err := apiClient.ListSubscribersInGroup(g.GroupID, nil)
+	subs, _, err := apiClient.ListSubscribersInGroup(groupCreated.GroupID, nil)
+	if err != nil {
+		t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
+	}
+	if len(subs) != len(createdSubscribers) {
+		t.Fatalf("All subscribers should be in group %s: %v", groupCreated.GroupID, err.Error())
+	}
+
+	for _, cs := range createdSubscribers {
+		_, err := apiClient.UnsetSubscriberGroup(cs.Imsi)
 		if err != nil {
-			t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
-		}
-		if len(subs) > 0 {
-			found = true
+			t.Fatalf("SetSubscriberGroup() failed: %v", err.Error())
 		}
 	}
-	if !found {
-		t.Fatalf("At least 1 subscriber is required to be a group")
+
+	subs, _, err = apiClient.ListSubscribersInGroup(groupCreated.GroupID, nil)
+	if err != nil {
+		t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
+	}
+	if len(subs) != 0 {
+		t.Fatalf("No subscribers should be in group %s: %v", groupCreated.GroupID, err.Error())
 	}
 }
 
@@ -1113,25 +1411,8 @@ func TestDeleteGroupTag(t *testing.T) {
 	}
 }
 
-func TestListEventHandlers(t *testing.T) {
-	eventHandlers, err := apiClient.ListEventHandlers(nil)
-	if err != nil {
-		t.Fatalf("ListEventHandlers() failed: %v", err.Error())
-	}
-	if len(eventHandlers) == 0 {
-		t.Fatalf("At least 1 event handler is required.")
-	}
-}
-
 func TestCreateEventHandler(t *testing.T) {
-	subs, _, err := apiClient.ListSubscribers(nil)
-	if err != nil {
-		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
-	}
-	if len(subs) < 1 {
-		t.Fatalf("Require at least 1 subscriber")
-	}
-	imsi := subs[0].Imsi
+	imsi := createdSubscribers[0].Imsi
 
 	o := &CreateEventHandlerOptions{
 		TargetImsi:  &imsi,
@@ -1155,63 +1436,38 @@ func TestCreateEventHandler(t *testing.T) {
 			},
 		},
 	}
-	err = apiClient.CreateEventHandler(o)
+	err := apiClient.CreateEventHandler(o)
 	if err != nil {
 		t.Fatalf("CreateEventHandler() failed: %v", err.Error())
 	}
 	//defer apiClient.DeleteEventHandler(eh1.HandlerID)
+}
 
+func TestListEventHandlers(t *testing.T) {
+	eventHandlers, err := apiClient.ListEventHandlers(nil)
+	if err != nil {
+		t.Fatalf("ListEventHandlers() failed: %v", err.Error())
+	}
+	if len(eventHandlers) == 0 {
+		t.Fatalf("At least 1 event handler is required.")
+	}
 }
 
 func TestListEventHandlersForSubscriber(t *testing.T) {
-	subs, _, err := apiClient.ListSubscribers(nil)
-	if err != nil {
-		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
-	}
-	if len(subs) < 1 {
-		t.Fatalf("Require at least 1 subscriber")
-	}
-	imsi := subs[0].Imsi
+	imsi := createdSubscribers[0].Imsi
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
 		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
 	}
 
-	fmt.Println(eventHandlers)
-}
-
-func TestDeleteEventHandler(t *testing.T) {
-	subs, _, err := apiClient.ListSubscribers(nil)
-	if err != nil {
-		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
-	}
-	if len(subs) < 1 {
-		t.Fatalf("Require at least 1 subscriber")
-	}
-	imsi := subs[0].Imsi
-
-	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
-	if err != nil {
-		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
-	}
-
-	id := eventHandlers[len(eventHandlers)-1].HandlerID
-	err = apiClient.DeleteEventHandler(id)
-	if err != nil {
-		t.Fatalf("DeleteEventHandler() failed: %v", err.Error())
+	if len(eventHandlers) == 0 {
+		t.Fatalf("At least 1 event handler is required for the subscriber.")
 	}
 }
 
 func TestGetEventHandler(t *testing.T) {
-	subs, _, err := apiClient.ListSubscribers(nil)
-	if err != nil {
-		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
-	}
-	if len(subs) < 1 {
-		t.Fatalf("Require at least 1 subscriber")
-	}
-	imsi := subs[0].Imsi
+	imsi := createdSubscribers[0].Imsi
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
@@ -1219,23 +1475,14 @@ func TestGetEventHandler(t *testing.T) {
 	}
 
 	id := eventHandlers[len(eventHandlers)-1].HandlerID
-	eh, err := apiClient.GetEventHandler(id)
+	_, err = apiClient.GetEventHandler(id)
 	if err != nil {
 		t.Fatalf("GetEventHandler() failed: %v", err.Error())
 	}
-
-	fmt.Println(eh)
 }
 
 func TestUpdateEventHandler(t *testing.T) {
-	subs, _, err := apiClient.ListSubscribers(nil)
-	if err != nil {
-		t.Fatalf("Error occurred on ListSubscribers(nil): %v", err.Error())
-	}
-	if len(subs) < 1 {
-		t.Fatalf("Require at least 1 subscriber")
-	}
-	imsi := subs[0].Imsi
+	imsi := createdSubscribers[0].Imsi
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
@@ -1262,5 +1509,20 @@ func TestUpdateEventHandler(t *testing.T) {
 
 	if eh2.Name != updatedName {
 		t.Fatalf("Event handler has not been updated correctly")
+	}
+}
+
+func TestDeleteEventHandler(t *testing.T) {
+	imsi := createdSubscribers[0].Imsi
+
+	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
+	if err != nil {
+		t.Fatalf("ListEventHandlersForSubscriber() failed: %v", err.Error())
+	}
+
+	id := eventHandlers[len(eventHandlers)-1].HandlerID
+	err = apiClient.DeleteEventHandler(id)
+	if err != nil {
+		t.Fatalf("DeleteEventHandler() failed: %v", err.Error())
 	}
 }

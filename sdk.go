@@ -70,11 +70,18 @@ type AuthRequest struct {
 
 // JSON returns JSON representing AuthRequest
 func (ar *AuthRequest) JSON() string {
-	bodyBytes, err := json.Marshal(ar)
-	if err != nil {
-		return ""
-	}
-	return string(bodyBytes)
+	return toJSON(ar)
+}
+
+// AuthKey contains AuthKeyID and AuthKeySecret
+type AuthKey struct {
+	AuthKeyID     string `json:"authKeyId"`
+	AuthKeySecret string `json:"authKey"`
+}
+
+// JSON returns JSON representing AuthKey
+func (ak *AuthKey) JSON() string {
+	return toJSON(ak)
 }
 
 // AuthResponse contains all values returned from /auth API
@@ -252,6 +259,9 @@ type RegisterSubscriberOptions struct {
 
 // JSON retunrs a JSON representing RegisterSubscriberOptions object
 func (rso *RegisterSubscriberOptions) JSON() string {
+	if rso.Tags == nil {
+		rso.Tags = Tags{}
+	}
 	return toJSON(rso)
 }
 
@@ -473,6 +483,11 @@ func parseAirStats(resp *http.Response) []AirStats {
 	return v
 }
 
+// JSON retunrs a JSON representing AirStats object
+func (o *AirStats) JSON() string {
+	return toJSON(o)
+}
+
 // BeamType represents one of in/out protocols for Beam
 type BeamType string
 
@@ -483,6 +498,8 @@ const (
 	BeamTypeInMQTT = "inMqtt"
 	// BeamTypeInTCP is ...
 	BeamTypeInTCP = "inTcp"
+	// BeamTypeInUDP is ...
+	BeamTypeInUDP = "inUdp"
 	// BeamTypeOutHTTP is ...
 	BeamTypeOutHTTP = "outHttp"
 	// BeamTypeOutHTTPS is ...
@@ -495,6 +512,8 @@ const (
 	BeamTypeOutTCP = "outTcp"
 	// BeamTypeOutTCPS is ...
 	BeamTypeOutTCPS = "outTcps"
+	// BeamTypeOutUDP is ...
+	BeamTypeOutUDP = "outUdp"
 )
 
 // BeamStatsForType holds Upload/Download Bytes/Packets for a speed class
@@ -514,6 +533,11 @@ func parseBeamStats(resp *http.Response) []BeamStats {
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&v)
 	return v
+}
+
+// JSON retunrs a JSON representing BeamStats object
+func (o *BeamStats) JSON() string {
+	return toJSON(o)
 }
 
 type exportAirStatsRequest struct {
@@ -891,6 +915,51 @@ func (o *CreateEventHandlerOptions) JSON() string {
 	return toJSON(o)
 }
 
+// PaymentMethodInfoWebPay keeps information of an WebPay payment method
+type PaymentMethodInfoWebPay struct {
+	Cvc         string `json:"cvc"`
+	ExpireMonth int    `json:"expireMonth"`
+	ExpireYear  int    `json:"expireYear"`
+	Name        string `json:"name"`
+	Number      string `json:"number"`
+}
+
+// JSON converts PaymentMethodInfoWebPay into a JSON string
+func (o *PaymentMethodInfoWebPay) JSON() string {
+	return toJSON(o)
+}
+
+// SandboxGetSignupTokenResponse keeps information of a signup token
+type SandboxGetSignupTokenResponse struct {
+	Token string `json:"token"`
+}
+
+func parseSignupToken(resp *http.Response) (string, error) {
+	dec := json.NewDecoder(resp.Body)
+	var r SandboxGetSignupTokenResponse
+	err := dec.Decode(&r)
+	if err != nil {
+		return "", err
+	}
+	return r.Token, nil
+}
+
+// CreatedSubscriber keeps information of a created subscriber
+type CreatedSubscriber struct {
+	Imsi               string `json:"imsi"`
+	RegistrationSecret string `json:"registrationSecret"`
+}
+
+func parseCreatedSubscriber(resp *http.Response) (*CreatedSubscriber, error) {
+	dec := json.NewDecoder(resp.Body)
+	var v CreatedSubscriber
+	err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
 func tagsToJSON(tags []Tag) string {
 	bodyBytes, err := json.Marshal(tags)
 	if err != nil {
@@ -915,6 +984,15 @@ func toJSON(x interface{}) string {
 		return ""
 	}
 	return string(bodyBytes)
+}
+
+func dumpHTTPRequest(req *http.Request) {
+	dump, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(dump))
 }
 
 func dumpHTTPResponse(resp *http.Response) {

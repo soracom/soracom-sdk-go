@@ -15,6 +15,7 @@ type APIClient struct {
 	Token      string
 	OperatorID string
 	endpoint   string
+	verbose    bool
 }
 
 // APIClientOptions holds options for creating an APIClient
@@ -37,6 +38,7 @@ func NewAPIClient(options *APIClientOptions) *APIClient {
 		Token:      "",
 		OperatorID: "",
 		endpoint:   endpoint,
+		verbose:    false,
 	}
 }
 
@@ -66,16 +68,31 @@ func (ac *APIClient) callAPI(params *apiParams) (*http.Response, error) {
 	req.Header.Set("X-Soracom-API-Key", ac.APIKey)
 	req.Header.Set("X-Soracom-Token", ac.Token)
 
+	if ac.verbose {
+		dumpHTTPRequest(req)
+	}
+
 	res, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
+	if ac.verbose {
+		dumpHTTPResponse(res)
+		fmt.Println("==========")
+	}
+
 	if res.StatusCode >= http.StatusBadRequest {
 		defer res.Body.Close()
 		return nil, NewAPIError(res)
 	}
 
 	return res, nil
+}
+
+// SetVerbose sets if verbose output is enabled or not
+func (ac *APIClient) SetVerbose(verbose bool) {
+	ac.verbose = verbose
 }
 
 // Auth does the authentication process. Gets an API key and an API Token
@@ -964,6 +981,109 @@ func (ac *APIClient) UpdateEventHandler(eh *EventHandler) error {
 		path:        "/v1/event_handlers/" + eh.HandlerID,
 		contentType: "application/json",
 		body:        eh.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// RegisterPaymentMethodWebPay registers the specified WebPay information as an active payment method
+func (ac *APIClient) RegisterPaymentMethodWebPay(wp *PaymentMethodInfoWebPay) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/payment_methods/webpay",
+		contentType: "application/json",
+		body:        wp.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// GetSignupToken retrieves token to complete signup (sandbox environment only)
+func (ac *APIClient) GetSignupToken(email, authKeyID, authKey string) (string, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/operators/token/" + email,
+		contentType: "application/json",
+		body: (&AuthKey{
+			AuthKeyID:     authKeyID,
+			AuthKeySecret: authKey,
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	token, err := parseSignupToken(resp)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+// CreateSubscriber sends a request to create a brand-new subscriber
+func (ac *APIClient) CreateSubscriber() (*CreatedSubscriber, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/subscribers/create",
+		contentType: "application/json",
+		body:        "",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	cs, err := parseCreatedSubscriber(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return cs, nil
+}
+
+// InsertAirStats inserts a set of data communication stats with a timestamp for a subscriber
+func (ac *APIClient) InsertAirStats(imsi string, stats AirStats) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/stats/air/subscribers/" + imsi,
+		contentType: "application/json",
+		body:        stats.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// InsertBeamStats inserts a set of beam stats with a timestamp for a subscriber
+func (ac *APIClient) InsertBeamStats(imsi string, stats BeamStats) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/stats/beam/subscribers/" + imsi,
+		contentType: "application/json",
+		body:        stats.JSON(),
 	}
 
 	resp, err := ac.callAPI(params)
