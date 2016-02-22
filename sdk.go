@@ -947,6 +947,7 @@ func parseSignupToken(resp *http.Response) (string, error) {
 // CreatedSubscriber keeps information of a created subscriber
 type CreatedSubscriber struct {
 	Imsi               string `json:"imsi"`
+	Msisdn             string `json:"msisdn"`
 	RegistrationSecret string `json:"registrationSecret"`
 }
 
