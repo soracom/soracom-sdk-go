@@ -1098,8 +1098,8 @@ func (ac *APIClient) InsertBeamStats(imsi string, stats BeamStats) error {
 // DeleteSandboxOperator delete a sandbox operator
 func (ac *APIClient) DeleteSandboxOperator() error {
 	params := &apiParams{
-		method:      "DELETE",
-		path:        "/v1/sandbox/operators/" + ac.OperatorID,
+		method: "DELETE",
+		path:   "/v1/sandbox/operators/" + ac.OperatorID,
 	}
 
 	resp, err := ac.callAPI(params)
