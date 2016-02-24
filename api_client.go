@@ -1110,3 +1110,28 @@ func (ac *APIClient) DeleteSandboxOperator() error {
 
 	return nil
 }
+// CreateCoupon sends a request to create a brand-new coupon
+func (ac *APIClient) CreateCoupon(options *CreatedCouponOptions) (*CreatedCoupon, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/coupons/create",
+		contentType: "application/json",
+	}
+
+	if options != nil {
+		params.body = options.JSON()
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	cc, err := parseCreatedCoupon(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return cc, nil
+}

@@ -961,6 +961,34 @@ func parseCreatedSubscriber(resp *http.Response) (*CreatedSubscriber, error) {
 	return &v, nil
 }
 
+type CreatedCouponOptions struct {
+	Amount                 int `json:"amount"`
+	ApplicableBillItemName string `json:"applicableBillItemName"`
+	ExpiryYearMonth        string `json:"expiryYearMonth"`
+}
+
+type CreatedCoupon struct {
+	CouponCode             string `json:"couponCode"`
+	Amount                 int `json:"amount"`
+	ApplicableBillItemName string `json:"applicableBillItemName"`
+	ExpiryYearMonth        string `json:"expiryYearMonth"`
+}
+
+func parseCreatedCoupon(resp *http.Response) (*CreatedCoupon, error) {
+	dec := json.NewDecoder(resp.Body)
+	var cc CreatedCoupon
+	err := dec.Decode(&cc)
+	if err != nil {
+		return nil, err
+	}
+	return &cc, nil
+}
+
+// JSON converts CreatedCouponOptions into a JSON string
+func (o *CreatedCouponOptions) JSON() string {
+	return toJSON(o)
+}
+
 func tagsToJSON(tags []Tag) string {
 	bodyBytes, err := json.Marshal(tags)
 	if err != nil {
