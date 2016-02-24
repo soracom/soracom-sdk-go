@@ -962,14 +962,14 @@ func parseCreatedSubscriber(resp *http.Response) (*CreatedSubscriber, error) {
 }
 
 type CreatedCouponOptions struct {
-	Amount                 int `json:"amount"`
+	Amount                 int    `json:"amount"`
 	ApplicableBillItemName string `json:"applicableBillItemName"`
 	ExpiryYearMonth        string `json:"expiryYearMonth"`
 }
 
 type CreatedCoupon struct {
 	CouponCode             string `json:"couponCode"`
-	Amount                 int `json:"amount"`
+	Amount                 int    `json:"amount"`
 	ApplicableBillItemName string `json:"applicableBillItemName"`
 	ExpiryYearMonth        string `json:"expiryYearMonth"`
 }
