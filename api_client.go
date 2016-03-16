@@ -1147,7 +1147,6 @@ func (ac *APIClient) CreateCredentialWithName(name string, options *CredentialOp
 
 	if options != nil {
 		params.body = options.JSON()
-		fmt.Println(params.body)
 	}
 
 	resp, err := ac.callAPI(params)
