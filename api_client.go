@@ -1095,7 +1095,7 @@ func (ac *APIClient) InsertBeamStats(imsi string, stats BeamStats) error {
 	return nil
 }
 
-// DeleteSandboxOperator delete a sandbox operator
+// DeleteSandboxOperator deletes a sandbox operator
 func (ac *APIClient) DeleteSandboxOperator() error {
 	params := &apiParams{
 		method: "DELETE",
