@@ -773,6 +773,13 @@ type BeamHTTPConfig struct {
 	PSK                 string                  `json:"psk"`
 }
 
+// FunnelDestinationConfig holds SORACOM Funnel Destination configurations
+type FunnelDestinationConfig struct {
+	Provider    string `json:"provider"`
+	Service     string `json:"service"`
+	ResourceUrl string `json:"resourceUrl"`
+}
+
 // EventHandlerRuleType is a type of event hander's rule
 type EventHandlerRuleType string
 
@@ -987,6 +994,46 @@ func parseCreatedCoupon(resp *http.Response) (*CreatedCoupon, error) {
 // JSON converts CreatedCouponOptions into a JSON string
 func (o *CreatedCouponOptions) JSON() string {
 	return toJSON(o)
+}
+
+type Credentials struct {
+	AccessKeyId     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+type CredentialOptions struct {
+	Type        string      `json:"type"`
+	Description string      `json:"description"`
+	Credentials Credentials `json:"credentials"`
+}
+
+// JSON converts CredentialOptions into a JSON string
+func (o *CredentialOptions) JSON() string {
+	return toJSON(o)
+}
+
+type CreatedCredential struct {
+	CredentialId     string          `json:"credentialsId"`
+	Type             string          `json:"type"`
+	Description      string          `json:"description"`
+	Credentials      Credentials     `json:"credentials"`
+	CreateDateTime   *TimestampMilli `json:"createDateTime"`
+	UpdateDateTime   *TimestampMilli `json:"updateDateTime"`
+	LastUsedDateTime *TimestampMilli `json:"lastUsedDateTime"`
+}
+
+func (cc *CreatedCredential) String() string {
+	return toJSON(cc)
+}
+
+func parseCreatedCredential(resp *http.Response) (*CreatedCredential, error) {
+	dec := json.NewDecoder(resp.Body)
+	var cc CreatedCredential
+	err := dec.Decode(&cc)
+	if err != nil {
+		return nil, err
+	}
+	return &cc, nil
 }
 
 func tagsToJSON(tags []Tag) string {

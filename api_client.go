@@ -1136,3 +1136,29 @@ func (ac *APIClient) CreateCoupon(options *CreatedCouponOptions) (*CreatedCoupon
 
 	return cc, nil
 }
+
+// CreateCredential sends a request to create a brand-new credential
+func (ac *APIClient) CreateCredentialWithName(name string, options *CredentialOptions) (*CreatedCredential, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/credentials/" + name,
+		contentType: "application/json",
+	}
+
+	if options != nil {
+		params.body = options.JSON()
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	cc, err := parseCreatedCredential(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return cc, nil
+}
