@@ -11,6 +11,7 @@ import (
 type MetadataClient struct {
 	httpClient *http.Client
 	endpoint   string
+	verbose    bool
 }
 
 // MetadataClientOptions holds options for creating an MetadataClient
@@ -33,6 +34,11 @@ func NewMetadataClient(options *MetadataClientOptions) *MetadataClient {
 	}
 }
 
+// SetVerbose sets if verbose output is enabled or not
+func (mc *MetadataClient) SetVerbose(verbose bool) {
+	mc.verbose = verbose
+}
+
 func (mc *MetadataClient) callAPI(params *apiParams) (*http.Response, error) {
 	url := mc.endpoint + params.path
 	if params.query != "" {
@@ -48,10 +54,20 @@ func (mc *MetadataClient) callAPI(params *apiParams) (*http.Response, error) {
 		req.Header.Set("Content-Type", params.contentType)
 	}
 
+	if mc.verbose {
+		dumpHTTPRequest(req)
+	}
+
 	res, err := mc.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
+	if mc.verbose {
+		dumpHTTPResponse(res)
+		fmt.Println("==========")
+	}
+
 	if res.StatusCode >= http.StatusBadRequest {
 		defer res.Body.Close()
 		return nil, NewAPIError(res)
