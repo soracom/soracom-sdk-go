@@ -17,6 +17,11 @@ func TestMetadataInit(t *testing.T) {
 		Endpoint: endpoint,
 	}
 	metadataClient = NewMetadataClient(options)
+
+	if os.Getenv("SORACOM_VERBOSE") != "" {
+		metadataClient.SetVerbose(true)
+	}
+
 }
 
 func TestMetadataGetSubscriber(t *testing.T) {
