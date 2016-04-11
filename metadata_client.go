@@ -263,7 +263,6 @@ func (mc *MetadataClient) DeleteTag(tagName string) error {
 		method: "DELETE",
 		path:   "/v1/subscriber/tags/" + percentEncoding(tagName),
 	}
-	fmt.Println(percentEncoding(tagName))
 	resp, err := mc.callAPI(params)
 	if err != nil {
 		return err

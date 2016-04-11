@@ -1,7 +1,6 @@
 package soracom
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -25,11 +24,10 @@ func TestMetadataInit(t *testing.T) {
 }
 
 func TestMetadataGetSubscriber(t *testing.T) {
-	sub, err := metadataClient.GetSubscriber()
+	_, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
 	}
-	fmt.Printf("%#v\n", sub)
 }
 
 func TestMetadataUdpateSpeedClass(t *testing.T) {
@@ -238,9 +236,8 @@ func TestMetadataPutDeleteTags(t *testing.T) {
 }
 
 func TestMetadataGetUserdata(t *testing.T) {
-	userdata, err := metadataClient.GetUserdata()
+	_, err := metadataClient.GetUserdata()
 	if err != nil {
 		t.Fatalf("GetUserdata() failed: %v", err.Error())
 	}
-	fmt.Printf("%#v\n", userdata)
 }
