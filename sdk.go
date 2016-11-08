@@ -141,8 +141,9 @@ func parseGetSupportTokenResponse(resp *http.Response) *GetSupportTokenResponse 
 }
 
 type createOperatorRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email         string   `json:"email"`
+	Password      string   `json:"password"`
+	CoverageTypes []string `json:"coverageTypes"`
 }
 
 func (r *createOperatorRequest) JSON() string {

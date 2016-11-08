@@ -193,6 +193,23 @@ func (ac *APIClient) CreateOperator(email, password string) error {
 	return nil
 }
 
+// CreateOperatorWithRequest sends a request to create an operator with the email, password, coverageTypes (and any other options) defined by req.
+func (ac *APIClient) CreateOperatorWithRequest(req createOperatorRequest) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/operators",
+		contentType: "application/json",
+		body:        (&req).JSON(),
+	}
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 // VerifyOperator sends a token to complete an operator creation process.
 func (ac *APIClient) VerifyOperator(token string) error {
 	params := &apiParams{
