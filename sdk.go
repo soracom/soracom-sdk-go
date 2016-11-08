@@ -144,7 +144,7 @@ func parseGetSupportTokenResponse(resp *http.Response) *GetSupportTokenResponse 
 type CreateOperatorRequest struct {
 	Email         string   `json:"email"`
 	Password      string   `json:"password"`
-	CoverageTypes []string `json:"coverageTypes"`
+	CoverageTypes []string `json:"coverageTypes,omitempty"`
 }
 
 // JSON encodes a CreateOperatorRequest object
