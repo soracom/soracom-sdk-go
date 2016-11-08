@@ -176,13 +176,19 @@ func (ac *APIClient) GetSupportToken() (string, error) {
 	return respBody.Token, nil
 }
 
-// CreateOperator sends a request to create an operator with the specified email & password.
+// CreateOperator sends a request to create an operator with the specified email & password. (This function exists because it predates the addition of the coverageTypes API parameter. The newer CreateOperatorWithRequest() supports all of the API parameters.)
 func (ac *APIClient) CreateOperator(email, password string) error {
+	req := CreateOperatorRequest{Email: email, Password: password}
+	return ac.CreateOperatorWithRequest(req)
+}
+
+// CreateOperatorWithRequest sends a request to create an operator, whose email, password, and coverageTypes properties are defined by req.
+func (ac *APIClient) CreateOperatorWithRequest(req CreateOperatorRequest) error {
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/operators",
 		contentType: "application/json",
-		body:        (&createOperatorRequest{Email: email, Password: password}).JSON(),
+		body:        (&req).JSON(),
 	}
 	resp, err := ac.callAPI(params)
 	if err != nil {
