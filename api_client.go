@@ -416,11 +416,11 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 	return subscriber, nil
 }
 
-// SetSubscriberExpiryTime sets expiration time of a subscriber.
-func (ac *APIClient) SetSubscriberExpiryTime(imsi string, expiryTime time.Time) (*Subscriber, error) {
+// SetSubscriberExpiredAt sets expiration time of a subscriber.
+func (ac *APIClient) SetSubscriberExpiredAt(imsi string, expiryTime time.Time) (*Subscriber, error) {
 	ts := &TimestampMilli{Time: expiryTime}
-	req := &setExpiryTimeRequest{
-		ExpiryTime: fmt.Sprint(ts.UnixMilli()),
+	req := &setExpiredAtRequest{
+		ExpiredAt: fmt.Sprint(ts.UnixMilli()),
 	}
 	params := &apiParams{
 		method:      "POST",
@@ -440,8 +440,8 @@ func (ac *APIClient) SetSubscriberExpiryTime(imsi string, expiryTime time.Time) 
 	return subscriber, nil
 }
 
-// UnsetSubscriberExpiryTime unsets expiration time of a subscriber.
-func (ac *APIClient) UnsetSubscriberExpiryTime(imsi string) (*Subscriber, error) {
+// UnsetSubscriberExpiredAt unsets expiration time of a subscriber.
+func (ac *APIClient) UnsetSubscriberExpiredAt(imsi string) (*Subscriber, error) {
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/subscribers/" + imsi + "/unset_expiry_time",

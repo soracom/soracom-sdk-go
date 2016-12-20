@@ -163,7 +163,7 @@ func registerPaymentMethod() error {
 	wp := &PaymentMethodInfoWebPay{
 		Cvc:         "123",
 		ExpireMonth: 12,
-		ExpireYear:  20,
+		ExpireYear:  time.Now().Year() + 3,
 		Name:        "SORAO TAMAGAWA",
 		Number:      "4242424242424242", // https://webpay.jp/docs/mock_cards
 	}
@@ -190,60 +190,61 @@ func registerSubscribers() error {
 		if i%3 == 2 {
 			o.Tags["soracom-sdk-go-test"] = "beam-stats"
 		}
-		_, err := apiClient.RegisterSubscriber(cs.Imsi, o)
+		_, err := apiClient.RegisterSubscriber(cs.IMSI, o)
 		if err != nil {
 			return err
 		}
 		if i%4 == 0 {
-			_, err := apiClient.ActivateSubscriber(cs.Imsi)
+			_, err := apiClient.ActivateSubscriber(cs.IMSI)
 			if err != nil {
 				return err
 			}
 		}
 		if i%4 == 1 {
-			_, err := apiClient.DeactivateSubscriber(cs.Imsi)
+			_, err := apiClient.DeactivateSubscriber(cs.IMSI)
 			if err != nil {
 				return err
 			}
 		}
 		if i%5 == 0 {
-			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.minimum")
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.IMSI, "s1.minimum")
 			if err != nil {
 				return err
 			}
 		}
 		if i%5 == 1 {
-			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.slow")
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.IMSI, "s1.slow")
 			if err != nil {
 				return err
 			}
 		}
 		if i%5 == 2 {
-			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.standard")
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.IMSI, "s1.standard")
 			if err != nil {
 				return err
 			}
 		}
 		if i%5 == 3 {
-			_, err := apiClient.UpdateSubscriberSpeedClass(cs.Imsi, "s1.fast")
+			_, err := apiClient.UpdateSubscriberSpeedClass(cs.IMSI, "s1.fast")
 			if err != nil {
 				return err
 			}
 		}
 
+		baseTime := time.Now()
 		for j := 0; j < 10; j++ {
-			t := time.Now().AddDate(0, 0, -10*j)
-			ts := t.UnixNano() / 1000 / 1000
-			err := apiClient.InsertAirStats(cs.Imsi, generateDummyAirStats(ts))
+			t := baseTime.AddDate(0, 0, -10*j).Add(time.Duration(j+1) * time.Second)
+			ts := t.Unix()
+			err := apiClient.InsertAirStats(cs.IMSI, generateDummyAirStats(ts))
 			if err != nil {
 				return err
 			}
 		}
 
 		for k := 0; k < 10; k++ {
-			t := time.Now().AddDate(0, 0, -10*k)
-			ts := t.UnixNano() / 1000 / 1000
-			err := apiClient.InsertBeamStats(cs.Imsi, generateDummyBeamStats(ts))
+			t := baseTime.AddDate(0, 0, -10*k).Add(2 * time.Duration(k+1) * time.Second)
+			ts := t.Unix()
+			err := apiClient.InsertBeamStats(cs.IMSI, generateDummyBeamStats(ts))
 			if err != nil {
 				return err
 			}
@@ -703,12 +704,12 @@ func TestGetSubscriber(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	sub, err := apiClient.GetSubscriber(imsi)
 	if err != nil {
 		t.Fatalf("Error occurred on GetSubscriber(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 }
@@ -720,12 +721,12 @@ func TestUpdateSubscriberSpeedClass(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	sub, err := apiClient.UpdateSubscriberSpeedClass(imsi, "s1.minimum")
 	if err != nil {
 		t.Fatalf("Error occurred on UpdateSubscriberSpeedClass(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.SpeedClass != "s1.minimum" {
@@ -736,7 +737,7 @@ func TestUpdateSubscriberSpeedClass(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on UpdateSubscriberSpeedClass(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.SpeedClass != "s1.fast" {
@@ -752,12 +753,12 @@ func TestActivateSubscriber(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 inactive subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	sub, err := apiClient.ActivateSubscriber(imsi)
 	if err != nil {
 		t.Fatalf("Error occurred on ActivateSubscriber(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Status != "active" {
@@ -773,12 +774,12 @@ func TestDeactivateSubscriber(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	sub, err := apiClient.DeactivateSubscriber(imsi)
 	if err != nil {
 		t.Fatalf("Error occurred on DeactivateSubscriber(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Status != "inactive" {
@@ -794,12 +795,12 @@ func TestEnableTermination(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 non-terminated subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	sub, err := apiClient.EnableSubscriberTermination(imsi)
 	if err != nil {
 		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if !sub.TerminationEnabled {
@@ -810,7 +811,7 @@ func TestEnableTermination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on DisableSubscriberTermination(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.TerminationEnabled {
@@ -829,7 +830,7 @@ func TestEnableTermination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if !sub.TerminationEnabled {
@@ -840,7 +841,7 @@ func TestEnableTermination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on DisableSubscriberTermination(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.TerminationEnabled {
@@ -859,7 +860,7 @@ func TestEnableTermination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on EnableSubscriberTermination(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if !sub.TerminationEnabled {
@@ -875,7 +876,7 @@ func TestEnableTermination(t *testing.T) {
 	}
 }
 
-func TestSetSubscriberExpiryTime(t *testing.T) {
+func TestSetSubscriberExpiredAt(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		StatusFilter: "active",
 		Limit:        1,
@@ -883,22 +884,22 @@ func TestSetSubscriberExpiryTime(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	tomorrow := time.Now().AddDate(0, 0, 1)
-	sub, err := apiClient.SetSubscriberExpiryTime(imsi, tomorrow)
+	sub, err := apiClient.SetSubscriberExpiredAt(imsi, tomorrow)
 	if err != nil {
-		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+		t.Fatalf("Error occurred on SetSubscriberExpiredAt(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
-	if sub.ExpiryTime.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
-		fmt.Printf("sub.ExpiryTime.Time == %s, tomorrow == %s", sub.ExpiryTime.Time, tomorrow)
+	if sub.ExpiredAt.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
+		fmt.Printf("sub.ExpiredAt.Time == %s, tomorrow == %s", sub.ExpiredAt.Time, tomorrow)
 		t.Fatalf("Expiry time for a subscriber has not been updated")
 	}
 }
 
-func TestUnsetSubscriberExpiryTime(t *testing.T) {
+func TestUnsetSubscriberExpiredAt(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		StatusFilter: "active",
 		Limit:        1,
@@ -906,28 +907,28 @@ func TestUnsetSubscriberExpiryTime(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 	tomorrow := time.Now().AddDate(0, 0, 1)
-	sub, err := apiClient.SetSubscriberExpiryTime(imsi, tomorrow)
+	sub, err := apiClient.SetSubscriberExpiredAt(imsi, tomorrow)
 	if err != nil {
-		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+		t.Fatalf("Error occurred on SetSubscriberExpiredAt(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
-	if sub.ExpiryTime.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
-		fmt.Printf("sub.ExpiryTime.Time == %s, tomorrow == %s", sub.ExpiryTime.Time, tomorrow)
+	if sub.ExpiredAt.UnixMilli() != (tomorrow.UnixNano() / 1000 / 1000) {
+		fmt.Printf("sub.ExpiredAt.Time == %s, tomorrow == %s", sub.ExpiredAt.Time, tomorrow)
 		t.Fatalf("Expiry time for a subscriber has not been updated")
 	}
 
-	sub, err = apiClient.UnsetSubscriberExpiryTime(imsi)
+	sub, err = apiClient.UnsetSubscriberExpiredAt(imsi)
 	if err != nil {
-		t.Fatalf("Error occurred on UnsetSubscriberExpiryTime(): %v", err.Error())
+		t.Fatalf("Error occurred on UnsetSubscriberExpiredAt(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
-	if sub.ExpiryTime != nil {
+	if sub.ExpiredAt != nil {
 		t.Fatalf("Expiry time for a subscriber must be nil")
 	}
 }
@@ -949,15 +950,15 @@ func TestPutSubscriberTag(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 
 	tags := make([]Tag, 0, 10)
 	tags = append(tags, Tag{TagName: tagNameForTest1, TagValue: tagValueForTest1})
 	sub, err := apiClient.PutSubscriberTags(imsi, tags)
 	if err != nil {
-		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+		t.Fatalf("Error occurred on SetSubscriberExpiredAt(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Tags[tagNameForTest1] != tagValueForTest1 {
@@ -969,9 +970,9 @@ func TestPutSubscriberTag(t *testing.T) {
 	tags = append(tags, Tag{TagName: tagNameForTest2, TagValue: tagValueForTest2})
 	sub, err = apiClient.PutSubscriberTags(imsi, tags)
 	if err != nil {
-		t.Fatalf("Error occurred on SetSubscriberExpiryTime(): %v", err.Error())
+		t.Fatalf("Error occurred on SetSubscriberExpiredAt(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Tags[tagNameForTest1] != tagValueForTest1_2 {
@@ -987,7 +988,7 @@ func TestPutSubscriberTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on PutSubscriberTag(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Tags[tagNameForTest1] != tagValueForTest1_2 {
@@ -1006,7 +1007,7 @@ func TestPutSubscriberTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error occurred on GetSubscriber(): %v", err.Error())
 	}
-	if sub.Imsi != imsi {
+	if sub.IMSI != imsi {
 		t.Fatalf("Found a subscriber which is not specified")
 	}
 	if sub.Tags[tagNameForTest1] != "" {
@@ -1032,7 +1033,7 @@ func sameSubscribers(subs1, subs2 []Subscriber) bool {
 }
 
 func sameSubscriber(sub1, sub2 *Subscriber) bool {
-	return sub1.Imsi == sub2.Imsi
+	return sub1.IMSI == sub2.IMSI
 }
 
 func TestGetAirStats(t *testing.T) {
@@ -1043,7 +1044,7 @@ func TestGetAirStats(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 active subscriber is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 
 	from := time.Now().AddDate(0, -6, 0)
 	to := time.Now()
@@ -1067,7 +1068,7 @@ func TestGetBeamStats(t *testing.T) {
 	if err != nil || len(subs) == 0 {
 		t.Fatalf("At least 1 subscriber which has soracom-sdk-go-test tag with value 'beam-stats' is required")
 	}
-	imsi := subs[0].Imsi
+	imsi := subs[0].IMSI
 
 	from := time.Now().AddDate(0, -6, 0)
 	to := time.Now()
@@ -1166,7 +1167,7 @@ func TestListSubscribersInGroup(t *testing.T) {
 	defer apiClient.DeleteGroup(groupCreated.GroupID)
 
 	for _, cs := range createdSubscribers {
-		_, err := apiClient.SetSubscriberGroup(cs.Imsi, groupCreated.GroupID)
+		_, err := apiClient.SetSubscriberGroup(cs.IMSI, groupCreated.GroupID)
 		if err != nil {
 			t.Fatalf("SetSubscriberGroup() failed: %v", err.Error())
 		}
@@ -1181,7 +1182,7 @@ func TestListSubscribersInGroup(t *testing.T) {
 	}
 
 	for _, cs := range createdSubscribers {
-		_, err := apiClient.UnsetSubscriberGroup(cs.Imsi)
+		_, err := apiClient.UnsetSubscriberGroup(cs.IMSI)
 		if err != nil {
 			t.Fatalf("SetSubscriberGroup() failed: %v", err.Error())
 		}
@@ -1415,10 +1416,10 @@ func TestDeleteGroupTag(t *testing.T) {
 }
 
 func TestCreateEventHandler(t *testing.T) {
-	imsi := createdSubscribers[0].Imsi
+	imsi := createdSubscribers[0].IMSI
 
 	o := &CreateEventHandlerOptions{
-		TargetImsi:  &imsi,
+		TargetIMSI:  &imsi,
 		Status:      "active",
 		Name:        "Test Event handler Name",
 		Description: "Test Event Handler Description",
@@ -1457,7 +1458,7 @@ func TestListEventHandlers(t *testing.T) {
 }
 
 func TestListEventHandlersForSubscriber(t *testing.T) {
-	imsi := createdSubscribers[0].Imsi
+	imsi := createdSubscribers[0].IMSI
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
@@ -1470,7 +1471,7 @@ func TestListEventHandlersForSubscriber(t *testing.T) {
 }
 
 func TestGetEventHandler(t *testing.T) {
-	imsi := createdSubscribers[0].Imsi
+	imsi := createdSubscribers[0].IMSI
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
@@ -1485,7 +1486,7 @@ func TestGetEventHandler(t *testing.T) {
 }
 
 func TestUpdateEventHandler(t *testing.T) {
-	imsi := createdSubscribers[0].Imsi
+	imsi := createdSubscribers[0].IMSI
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {
@@ -1516,7 +1517,7 @@ func TestUpdateEventHandler(t *testing.T) {
 }
 
 func TestDeleteEventHandler(t *testing.T) {
-	imsi := createdSubscribers[0].Imsi
+	imsi := createdSubscribers[0].IMSI
 
 	eventHandlers, err := apiClient.ListEventHandlersForSubscriber(imsi)
 	if err != nil {

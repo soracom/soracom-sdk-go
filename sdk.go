@@ -268,10 +268,14 @@ func (rso *RegisterSubscriberOptions) JSON() string {
 	return toJSON(rso)
 }
 
+type IMEILock struct {
+	IMEI string `json:"imei"`
+}
+
 // SessionStatus keeps information about a session
 type SessionStatus struct {
 	DNSServers    []string        `json:"dnsServers"`
-	Imei          string          `json:"imei"`
+	IMEI          string          `json:"imei"`
 	LastUpdatedAt *TimestampMilli `json:"lastUpdatedAt"`
 	Location      *string         `json:"location"`
 	Online        bool            `json:"online"`
@@ -280,20 +284,24 @@ type SessionStatus struct {
 
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
-	Apn                string          `json:"apn"`
-	CreatedTime        *TimestampMilli `json:"createdTime"`
-	ExpiryTime         *TimestampMilli `json:"expiryTime"`
-	GroupID            *string         `json:"groupId"`
-	Imsi               string          `json:"imsi"`
-	IPAddress          *string         `json:"ipAddress"`
-	LastModifiedTime   *TimestampMilli `json:"lastModifiedTime"`
+	APN                string          `json:"apn"`
+	CreatedAt          *TimestampMilli `json:"createdAt"`
+	ExpiredAt          *TimestampMilli `json:"expiredAt"`
+	ExpiryAction       *string         `json:"expiryAction,omitempty"`
+	GroupID            *string         `json:"groupId,omitempty"`
+	ICCID              string          `json:"iccid,omitempty"`
+	IMEILock           *IMEILock       `json:"imeiLock,omitempty"`
+	IMSI               string          `json:"imsi"`
+	IPAddress          *string         `json:"ipAddress,omitempty"`
+	LastModifiedAt     *TimestampMilli `json:"lastModifiedAt"`
 	ModuleType         string          `json:"ModuleType"`
-	Msisdn             string          `json:"msisdn"`
+	MSISDN             string          `json:"msisdn"`
 	OperatorID         string          `json:"operatorId"`
 	Plan               int             `json:"plan"`
+	SerialNumber       string          `json:"serialNumber"`
 	SessionStatus      *SessionStatus  `json:"sessionStatus"`
-	Status             string          `json:"status"`
 	SpeedClass         string          `json:"speedClass"`
+	Status             string          `json:"status"`
 	Tags               Tags            `json:"tags"`
 	TerminationEnabled bool            `json:"terminationEnabled"`
 }
@@ -378,12 +386,12 @@ func (r *updateSpeedClassRequest) JSON() string {
 	return string(bodyBytes)
 }
 
-type setExpiryTimeRequest struct {
-	ExpiryTime string `json:"expiryTime"`
+type setExpiredAtRequest struct {
+	ExpiredAt string `json:"expiryTime"`
 }
 
-// JSON retunrs a JSON representing setExpiryTimeRequest object
-func (r *setExpiryTimeRequest) JSON() string {
+// JSON retunrs a JSON representing setExpiredAtRequest object
+func (r *setExpiredAtRequest) JSON() string {
 	bodyBytes, err := json.Marshal(r)
 	if err != nil {
 		return ""
@@ -909,7 +917,7 @@ func parseEventHandler(resp *http.Response) (*EventHandler, error) {
 
 // CreateEventHandlerOptions keeps information to create an event handler
 type CreateEventHandlerOptions struct {
-	TargetImsi       *string        `json:"targetImsi"`
+	TargetIMSI       *string        `json:"targetImsi"`
 	TargetOperatorID *string        `json:"targetOperatorId"`
 	TargetTag        *Tags          `json:"targetTag"`
 	TargetGroupID    *string        `json:"targetGroupId"`
@@ -956,8 +964,8 @@ func parseSignupToken(resp *http.Response) (string, error) {
 
 // CreatedSubscriber keeps information of a created subscriber
 type CreatedSubscriber struct {
-	Imsi               string `json:"imsi"`
-	Msisdn             string `json:"msisdn"`
+	IMSI               string `json:"imsi"`
+	MSISDN             string `json:"msisdn"`
 	RegistrationSecret string `json:"registrationSecret"`
 }
 
@@ -1016,7 +1024,7 @@ func (o *CredentialOptions) JSON() string {
 }
 
 type CreatedCredential struct {
-	CredentialId     string          `json:"credentialsId"`
+	CredentialID     string          `json:"credentialsId"`
 	Type             string          `json:"type"`
 	Description      string          `json:"description"`
 	Credentials      Credentials     `json:"credentials"`

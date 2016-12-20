@@ -153,11 +153,11 @@ func (mc *MetadataClient) DisableTermination() (*Subscriber, error) {
 	return subscriber, nil
 }
 
-// SetExpiryTime sets expiration time of the calling subscriber.
-func (mc *MetadataClient) SetExpiryTime(expiryTime time.Time) (*Subscriber, error) {
+// SetExpiredAt sets expiration time of the calling subscriber.
+func (mc *MetadataClient) SetExpiredAt(expiryTime time.Time) (*Subscriber, error) {
 	ts := &TimestampMilli{Time: expiryTime}
-	req := &setExpiryTimeRequest{
-		ExpiryTime: fmt.Sprint(ts.UnixMilli()),
+	req := &setExpiredAtRequest{
+		ExpiredAt: fmt.Sprint(ts.UnixMilli()),
 	}
 	params := &apiParams{
 		method:      "POST",
@@ -177,8 +177,8 @@ func (mc *MetadataClient) SetExpiryTime(expiryTime time.Time) (*Subscriber, erro
 	return subscriber, nil
 }
 
-// UnsetExpiryTime unsets expiration time of the calling subscriber.
-func (mc *MetadataClient) UnsetExpiryTime() (*Subscriber, error) {
+// UnsetExpiredAt unsets expiration time of the calling subscriber.
+func (mc *MetadataClient) UnsetExpiredAt() (*Subscriber, error) {
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/subscriber/unset_expiry_time",

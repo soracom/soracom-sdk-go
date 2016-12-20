@@ -107,38 +107,38 @@ func timeToUnixMilli(t time.Time) int64 {
 	return t.UnixNano() / (1000 * 1000)
 }
 
-func TestMetadataSetUnsetExpiryTime(t *testing.T) {
+func TestMetadataSetUnsetExpiredAt(t *testing.T) {
 	sub, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
 	}
 
-	originalExpiryTime := sub.ExpiryTime
+	originalExpiredAt := sub.ExpiredAt
 
 	exp := time.Now().Add(1 * time.Hour)
-	sub, err = metadataClient.SetExpiryTime(exp)
+	sub, err = metadataClient.SetExpiredAt(exp)
 	if err != nil {
-		t.Fatalf("SetExpiryTime() failed: %v", err.Error())
+		t.Fatalf("SetExpiredAt() failed: %v", err.Error())
 	}
-	if sub.ExpiryTime.UnixMilli() != timeToUnixMilli(exp) {
-		t.Fatalf("Unexpected ExpiryTime")
+	if sub.ExpiredAt.UnixMilli() != timeToUnixMilli(exp) {
+		t.Fatalf("Unexpected ExpiredAt")
 	}
 
-	sub, err = metadataClient.UnsetExpiryTime()
+	sub, err = metadataClient.UnsetExpiredAt()
 	if err != nil {
-		t.Fatalf("UnsetExpiryTime() failed: %v", err.Error())
+		t.Fatalf("UnsetExpiredAt() failed: %v", err.Error())
 	}
-	if sub.ExpiryTime != nil {
-		t.Fatalf("Unexpected ExpiryTime")
+	if sub.ExpiredAt != nil {
+		t.Fatalf("Unexpected ExpiredAt")
 	}
 
-	if originalExpiryTime != nil {
-		sub, err = metadataClient.SetExpiryTime(originalExpiryTime.Time)
+	if originalExpiredAt != nil {
+		sub, err = metadataClient.SetExpiredAt(originalExpiredAt.Time)
 		if err != nil {
-			t.Fatalf("SetExpiryTime() failed: %v", err.Error())
+			t.Fatalf("SetExpiredAt() failed: %v", err.Error())
 		}
-		if sub.ExpiryTime.UnixMilli() != originalExpiryTime.UnixMilli() {
-			t.Fatalf("Unexpected value of ExpiryTime")
+		if sub.ExpiredAt.UnixMilli() != originalExpiredAt.UnixMilli() {
+			t.Fatalf("Unexpected value of ExpiredAt")
 		}
 	}
 }
