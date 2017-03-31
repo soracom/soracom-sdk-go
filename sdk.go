@@ -947,6 +947,17 @@ func (o *PaymentMethodInfoWebPay) JSON() string {
 	return toJSON(o)
 }
 
+// PaymentMethodInfoPayJP holds payment method tokens
+type PaymentMethodInfoPayJP struct {
+	PayJPToken  string `json:"payJPToken"`
+	StripeToken string `json:"stripeToken"`
+}
+
+// JSON converts PaymentMethodInfoPayJP into a JSON string
+func (o *PaymentMethodInfoPayJP) JSON() string {
+	return toJSON(o)
+}
+
 // SandboxGetSignupTokenResponse keeps information of a signup token
 type SandboxGetSignupTokenResponse struct {
 	Token string `json:"token"`

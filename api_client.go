@@ -1016,6 +1016,24 @@ func (ac *APIClient) RegisterPaymentMethodWebPay(wp *PaymentMethodInfoWebPay) er
 	return nil
 }
 
+// RegisterPaymentMethodPayJP registers the specified payment method tokens as an active payment method
+func (ac *APIClient) RegisterPaymentMethodPayJP(pm *PaymentMethodInfoPayJP) error {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/payment_methods/token/payjp",
+		contentType: "application/json",
+		body:        pm.JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 // GetSignupToken retrieves token to complete signup (sandbox environment only)
 func (ac *APIClient) GetSignupToken(email, authKeyID, authKey string) (string, error) {
 	params := &apiParams{
