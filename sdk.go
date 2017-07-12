@@ -63,8 +63,10 @@ func (t *TimestampMilli) UnixMilli() int64 {
 
 // AuthRequest contains parameters for /auth API
 type AuthRequest struct {
-	Email               string `json:"email"`
-	Password            string `json:"password"`
+	Email               string `json:"email,omitempty"`
+	Password            string `json:"password,omitempty"`
+	AuthKeyID           string `json:"authKeyId,omitempty"`
+	AuthKey             string `json:"authKey,omitempty"`
 	TokenTimeoutSeconds int    `json:"tokenTimeoutSeconds"`
 }
 

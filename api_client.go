@@ -98,10 +98,23 @@ func (ac *APIClient) SetVerbose(verbose bool) {
 // Auth does the authentication process. Gets an API key and an API Token
 func (ac *APIClient) Auth(email, password string) error {
 	body := &AuthRequest{
-		Email:               email,
-		Password:            password,
-		TokenTimeoutSeconds: 24 * 60 * 60,
+		Email:    email,
+		Password: password,
 	}
+	return ac.auth(body)
+}
+
+// AuthWithAuthKey does the authentication process with auth key. Gets an API key and an API Token
+func (ac *APIClient) AuthWithAuthKey(authKeyID, authKey string) error {
+	body := &AuthRequest{
+		AuthKeyID: authKeyID,
+		AuthKey:   authKey,
+	}
+	return ac.auth(body)
+}
+
+func (ac *APIClient) auth(body *AuthRequest) error {
+	body.TokenTimeoutSeconds = 24 * 60 * 60
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/auth",
