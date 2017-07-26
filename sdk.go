@@ -804,22 +804,25 @@ const (
 	EventHandlerRuleTypeDailyTraffic EventHandlerRuleType = "DailyTrafficRule"
 
 	// EventHandlerRuleTypeMonthlyTraffic is a rule type to invoke actions when data traffic for a month for a subscriber exceeds the specified limit
-	EventHandlerRuleTypeMonthlyTraffic EventHandlerRuleType = "MonthlyTraffic"
+	EventHandlerRuleTypeMonthlyTraffic EventHandlerRuleType = "MonthlyTrafficRule"
 
 	// EventHandlerRuleTypeCumulativeTraffic is a rule type to invoke actions when cumulative data traffic for a subscriber exceeds the specified limit
-	EventHandlerRuleTypeCumulativeTraffic EventHandlerRuleType = "CumulativeTraffic"
+	EventHandlerRuleTypeCumulativeTraffic EventHandlerRuleType = "CumulativeTrafficRule"
 
 	// EventHandlerRuleTypeDailyTotalTraffic is a rule type to invoke actions when total data traffic for a day for all subscribers exceeds the specified limit
-	EventHandlerRuleTypeDailyTotalTraffic EventHandlerRuleType = "DailyTotalTraffic"
+	EventHandlerRuleTypeDailyTotalTraffic EventHandlerRuleType = "DailyTotalTrafficRule"
 
 	// EventHandlerRuleTypeMonthlyTotalTraffic is a rule type to invoke actions when total data traffic for a month for all subscribers exceeds the specified limit
-	EventHandlerRuleTypeMonthlyTotalTraffic EventHandlerRuleType = "MonthlyTotalTraffic"
+	EventHandlerRuleTypeMonthlyTotalTraffic EventHandlerRuleType = "MonthlyTotalTrafficRule"
 
-	// EventHandlerRuleTypeSubscriberStatusChanged is a rule type to invoke actions when status of a subscriber has been changed
-	EventHandlerRuleTypeSubscriberStatusChanged EventHandlerRuleType = "SubscriberStatusChanged"
+	// EventHandlerRuleTypeSubscriberStatusAttribute is a rule type to invoke actions when status of a subscriber has been changed
+	EventHandlerRuleTypeSubscriberStatusAttribute EventHandlerRuleType = "SubscriberStatusAttributeRule"
 
-	// EventHandlerRuleTypeSubscriberSpeedClassChanged is a rule type to invoke actions when speed class of a subscriber has been changed
-	EventHandlerRuleTypeSubscriberSpeedClassChanged EventHandlerRuleType = "SubscriberSpeedClassChanged"
+	// EventHandlerRuleTypeSubscriberSpeedClassAttribute is a rule type to invoke actions when speed class of a subscriber has been changed
+	EventHandlerRuleTypeSubscriberSpeedClassAttribute EventHandlerRuleType = "SubscriberSpeedClassAttributeRule"
+
+	// EventHandlerRuleTypeSubscriberExpired is a rule type to invoke actions when a subscriber has been expired
+	EventHandlerRuleTypeSubscriberExpired EventHandlerRuleType = "SubscriberExpiredRule"
 )
 
 // RuleConfig contains a condition to invoke actions
