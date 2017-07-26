@@ -876,7 +876,11 @@ type ListEventHandlersOptions struct {
 }
 
 func (leho *ListEventHandlersOptions) String() string {
-	return leho.Target
+	var s = make([]string, 0, 10)
+	if leho.Target != "" {
+		s = append(s, "target="+leho.Target)
+	}
+	return strings.Join(s, "&")
 }
 
 func parseListEventHandlersResponse(resp *http.Response) ([]EventHandler, error) {
