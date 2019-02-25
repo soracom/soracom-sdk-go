@@ -277,10 +277,10 @@ type IMEILock struct {
 // Cell keeps information about a cell
 type Cell struct {
 	RadioType string `json:"radioType"`
-	Mcc       int    `json:"mcc"`
-	Mnc       int    `json:"mnc"`
-	Tac       int    `json:"tac"`
-	Eci       int    `json:"eci"`
+	MCC       int    `json:"mcc"` // Mobile Country Code
+	MNC       int    `json:"mnc"` // Mobile Network Code
+	TAC       int    `json:"tac"` // Tracking Area Code
+	ECI       int    `json:"eci"` // E-UTRAN Cell Identifier
 }
 
 // SessionStatus keeps information about a session
