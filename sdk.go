@@ -274,12 +274,22 @@ type IMEILock struct {
 	IMEI string `json:"imei"`
 }
 
+// Cell keeps information about a cell
+type Cell struct {
+	RadioType string `json:"radioType"`
+	Mcc       int    `json:"mcc"`
+	Mnc       int    `json:"mnc"`
+	Tac       int    `json:"tac"`
+	Eci       int    `json:"eci"`
+}
+
 // SessionStatus keeps information about a session
 type SessionStatus struct {
 	DNSServers    []string        `json:"dnsServers"`
 	IMEI          string          `json:"imei"`
 	LastUpdatedAt *TimestampMilli `json:"lastUpdatedAt"`
 	Location      *string         `json:"location"`
+	Cell          *Cell           `json:"cell"`
 	Online        bool            `json:"online"`
 	UEIPAddress   string          `json:"ueIpAddress"`
 }
