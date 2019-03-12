@@ -17,11 +17,16 @@ type MetadataClient struct {
 // MetadataClientOptions holds options for creating an MetadataClient
 type MetadataClientOptions struct {
 	Endpoint string
+	Client   *http.Client
 }
 
 // NewMetadataClient creates an instance of MetadataClient
 func NewMetadataClient(options *MetadataClientOptions) *MetadataClient {
 	hc := http.DefaultClient
+
+	if options != nil && options.Client != nil {
+		hc = options.Client
+	}
 
 	var endpoint = "http://metadata.soracom.io"
 	if options != nil && options.Endpoint != "" {

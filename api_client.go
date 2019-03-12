@@ -21,11 +21,16 @@ type APIClient struct {
 // APIClientOptions holds options for creating an APIClient
 type APIClientOptions struct {
 	Endpoint string
+	Client   *http.Client
 }
 
 // NewAPIClient creates an instance of APIClient
 func NewAPIClient(options *APIClientOptions) *APIClient {
 	hc := http.DefaultClient
+
+	if options != nil && options.Client != nil {
+		hc = options.Client
+	}
 
 	var endpoint = "https://api.soracom.io"
 	if options != nil && options.Endpoint != "" {
