@@ -294,6 +294,22 @@ type SessionStatus struct {
 	UEIPAddress   string          `json:"ueIpAddress"`
 }
 
+// SessionEvent contains a session connect/disconnect event
+type SessionEvent struct {
+	APN                     string `json:"apn"`
+	DNS0                    string `json:"dns0"`
+	DNS1                    string `json:"dns1"`
+	Event                   string `json:"event"`
+	GatewayPrivateIPAddress string `json:"gatewayPrivateIpAddress"`
+	GatewayPublicIPAddress  string `json:"gatewayPublicIpAddress"`
+	IMEI                    string `json:"imei"`
+	IMSI                    string `json:"imsi"`
+	OperatorID              string `json:"operatorId"`
+	Time                    string `json:"time"`
+	UEIPAddress             string `json:"ueIpAddress"`
+	VPGID                   string `json:"vpgId"`
+}
+
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
 	APN                string          `json:"apn"`
@@ -1075,6 +1091,62 @@ func parseCreatedCredential(resp *http.Response) (*CreatedCredential, error) {
 		return nil, err
 	}
 	return &cc, nil
+}
+
+// ListSessionEventsOptions holds options for APIClient.ListSessionEvents()
+type ListSessionEventsOptions struct {
+	From             time.Time
+	To               time.Time
+	Limit            int
+	LastEvaluatedKey string
+}
+
+func (lse *ListSessionEventsOptions) String() string {
+	var s = make([]string, 0, 10)
+	if lse.Limit != 0 {
+		s = append(s, "limit="+strconv.Itoa(lse.Limit))
+	}
+
+	if !lse.From.IsZero() {
+		s = append(s, "from="+strconv.FormatInt(lse.From.Unix()*1000, 10))
+	}
+	if !lse.To.IsZero() {
+		s = append(s, "to="+strconv.FormatInt(lse.To.Unix(), 10))
+	}
+
+	if lse.LastEvaluatedKey != "" {
+		s = append(s, "last_evaluated_key="+lse.LastEvaluatedKey)
+	}
+	fmt.Println(s)
+	return strings.Join(s, "&")
+}
+
+func parseSessionEventsResponse(resp *http.Response) ([]SessionEvent, error) {
+	sessionEvents := make([]SessionEvent, 0, 10)
+	dec := json.NewDecoder(resp.Body)
+
+	// read open bracket
+	_, err := dec.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	for dec.More() {
+		var se SessionEvent
+		err = dec.Decode(&se)
+		if err != nil {
+			continue
+		}
+		sessionEvents = append(sessionEvents, se)
+	}
+
+	// read close bracket
+	_, err = dec.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionEvents, nil
 }
 
 func tagsToJSON(tags []Tag) string {

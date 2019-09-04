@@ -1199,3 +1199,24 @@ func (ac *APIClient) CreateCredentialWithName(name string, options *CredentialOp
 
 	return cc, nil
 }
+
+// ListSessionEvents returns the event history for the specified subscriber, including session creation, change, and deletion. If the total number of events does not fit in one page, a URL for accessing the next page is returned in the Link header of the response.
+func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOptions) ([]SessionEvent, error) {
+	params := &apiParams{
+		method:      "GET",
+		path:        fmt.Sprintf("/v1/subscribers/%s/events/sessions", imsi),
+		contentType: "application/json",
+	}
+	query := ""
+	if options != nil {
+		query = options.String()
+	}
+	params.query = query
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return parseSessionEventsResponse(resp)
+}
