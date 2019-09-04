@@ -1108,7 +1108,7 @@ func (lse *ListSessionEventsOptions) String() string {
 	}
 
 	if !lse.From.IsZero() {
-		s = append(s, "from="+strconv.FormatInt(lse.From.Unix()*1000, 10))
+		s = append(s, "from="+strconv.FormatInt(lse.From.Unix(), 10))
 	}
 	if !lse.To.IsZero() {
 		s = append(s, "to="+strconv.FormatInt(lse.To.Unix(), 10))
