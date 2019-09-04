@@ -1117,7 +1117,6 @@ func (lse *ListSessionEventsOptions) String() string {
 	if lse.LastEvaluatedKey != "" {
 		s = append(s, "last_evaluated_key="+lse.LastEvaluatedKey)
 	}
-	fmt.Println(s)
 	return strings.Join(s, "&")
 }
 
