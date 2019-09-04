@@ -305,7 +305,7 @@ type SessionEvent struct {
 	IMEI                    string `json:"imei"`
 	IMSI                    string `json:"imsi"`
 	OperatorID              string `json:"operatorId"`
-	Time                    string `json:"time"`
+	Time                    int64  `json:"time"`
 	UEIPAddress             string `json:"ueIpAddress"`
 	VPGID                   string `json:"vpgId"`
 }
