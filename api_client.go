@@ -434,6 +434,46 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 	return subscriber, nil
 }
 
+// Suspend suspend a subscriber.
+func (ac *APIClient) Suspend(imsi string) (*Subscriber, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/subscribers/" + imsi + "/suspend",
+		contentType: "application/json",
+		body:        "{}",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	subscriber := parseSubscriber(resp)
+
+	return subscriber, nil
+}
+
+// SetToStandby set to standby a subscriber.
+func (ac *APIClient) SetToStandby(imsi string) (*Subscriber, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/subscribers/" + imsi + "/set_to_standby",
+		contentType: "application/json",
+		body:        "{}",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	subscriber := parseSubscriber(resp)
+
+	return subscriber, nil
+}
+
 // SetSubscriberExpiredAt sets expiration time of a subscriber.
 func (ac *APIClient) SetSubscriberExpiredAt(imsi string, expiryTime time.Time) (*Subscriber, error) {
 	ts := &TimestampMilli{Time: expiryTime}
