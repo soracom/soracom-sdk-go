@@ -968,6 +968,31 @@ func TestEnableTermination(t *testing.T) {
 	}
 }
 
+func TestSessionEvent(t *testing.T) {
+	t.Skip("occur unknown error: stream error: stream ID 1261; PROTOCOL_ERROR")
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active|inactive|ready",
+		Limit:        1,
+	})
+	if err != nil || len(subs) == 0 {
+		t.Fatalf("At least 1 non-terminated subscriber is required")
+	}
+	imsi := subs[0].IMSI
+
+	opt := &ListSessionEventsOption{
+		// From:  time.Now().Add(time.Hour * -24),
+		// To:    time.Now(),
+		Limit: 1,
+	}
+	result, err := apiClient.ListSessionEvents(imsi, opt)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSessionEvents: %s", err)
+	}
+	if len(result) > 0 {
+		t.Logf("found event %d", len(result))
+	}
+}
+
 func TestSetSubscriberExpiredAt(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		StatusFilter: "active",

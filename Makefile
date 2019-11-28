@@ -4,4 +4,6 @@ setup:
 
 test:
 	go vet ./...
-	go test -v -race -p=1 ./...
+
+	# test api client (ignore metadata client)
+	go test -v -race -p=1 ./... -run "^Test[ABCDEFGHIJKLNOPQRSTUVWXYZ].+"

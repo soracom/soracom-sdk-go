@@ -1067,6 +1067,61 @@ func (cc *CreatedCredential) String() string {
 	return toJSON(cc)
 }
 
+type ListSessionEventsOption struct {
+	From             time.Time `json:"from"`
+	To               time.Time `json:"to"`
+	Limit            int       `json:"limit"`
+	LastEvaluatedKey string    `json:"last_evaluated_key"`
+}
+
+func (o ListSessionEventsOption) queryString() url.Values {
+
+	v := url.Values{}
+	if !o.From.IsZero() {
+		v.Add("from", strconv.FormatInt(o.From.Unix(), 10))
+	}
+
+	if !o.To.IsZero() {
+		v.Add("to", strconv.FormatInt(o.To.Unix(), 10))
+	}
+
+	if o.Limit > 0 {
+		v.Add("limit", strconv.FormatInt(int64(o.Limit), 10))
+	}
+
+	if len(o.LastEvaluatedKey) > 0 {
+		v.Add("last_evaluated_key", o.LastEvaluatedKey)
+	}
+
+	return v
+}
+
+type SessionEvent struct {
+	IMSI        string    `json:"imsi"`
+	Time        time.Time `json:"createdTime"`
+	OperatorId  string    `json:"operatorId"`
+	Event       string    `json:"event"`
+	UEIPAddress string    `json:"ueIpAddress"`
+	IMEI        string    `json:"imei"`
+	APN         string    `json:"apn"`
+	DNS0        string    `json:"dns0"`
+	DNS1        string    `json:"dns1"`
+	Cell        Cell      `json:"cell"`
+	PrimaryIMSI string    `json:"primaryImsi"`
+}
+
+func parseListSessionEvents(r io.Reader) ([]SessionEvent, error) {
+
+	var events []SessionEvent
+
+	dec := json.NewDecoder(r)
+	err := dec.Decode(&events)
+	if err != nil {
+		return nil, err
+	}
+	return events, err
+}
+
 func parseCreatedCredential(resp *http.Response) (*CreatedCredential, error) {
 	dec := json.NewDecoder(resp.Body)
 	var cc CreatedCredential
