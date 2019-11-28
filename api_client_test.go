@@ -969,7 +969,6 @@ func TestEnableTermination(t *testing.T) {
 }
 
 func TestSessionEvent(t *testing.T) {
-	t.Skip("occur unknown error: stream error: stream ID 1261; PROTOCOL_ERROR")
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		StatusFilter: "active|inactive|ready",
 		Limit:        1,

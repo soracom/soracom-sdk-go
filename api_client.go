@@ -437,7 +437,7 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 // ListSessionEvents get session events
 func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOption) ([]SessionEvent, error) {
 	params := &apiParams{
-		method:      "Get",
+		method:      "GET",
 		path:        fmt.Sprintf("/v1/subscribers/%s/events/sessions", imsi),
 		contentType: "application/json",
 	}
