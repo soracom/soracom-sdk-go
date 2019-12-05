@@ -1542,6 +1542,19 @@ func TestCreateEventHandler(t *testing.T) {
 		RuleConfig:  RuleDailyTraffic(1000, BEGINNING_OF_NEXT_MONTH),
 		ActionConfigList: []ActionConfig{
 			ActionChangeSpeed(IMMEDIATELY, SpeedClassS1Minimum),
+			ActionWebHook(IMMEDIATELY, ActionWebhookProperty{
+				URL:         "https://example.com/my/api",
+				Method:      http.MethodPost,
+				ContentType: "application/json",
+				Body:        `{"message":"Hello world"}`,
+			}),
+			ActionWebHook(IMMEDIATELY, ActionWebhookProperty{
+				URL:         "https://example.com/my/api",
+				Method:      http.MethodGet,
+				ContentType: "application/json",
+			}),
+			ActionDectivate(IMMEDIATELY),
+			ActionActivate(BEGINNING_OF_NEXT_MONTH),
 		},
 	}
 	err := apiClient.CreateEventHandler(o)

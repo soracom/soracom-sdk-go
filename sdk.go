@@ -866,9 +866,9 @@ const (
 
 	EventHandlerActionTypeExecuteWebRequest EventHandlerActionType = "ExecuteWebRequestAction"
 
-	EventHandlerActionTypeActivate EventHandlerActionType = "ActivateAction"
+	EventHandlerActionTypeActivate EventHandlerActionType = "ActivationAction"
 
-	EventHandlerActionTypeDeactivate EventHandlerActionType = "DeactivateAction"
+	EventHandlerActionTypeDeactivate EventHandlerActionType = "DeactivationAction"
 )
 
 // ActionConfig contains an action to be invoked when a condition is satisfied

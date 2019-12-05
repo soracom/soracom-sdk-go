@@ -1,6 +1,10 @@
 package soracom
 
-import "strconv"
+import (
+	"fmt"
+	"net/http"
+	"strconv"
+)
 
 type EventDateTimeConst string
 
@@ -67,13 +71,28 @@ type ActionWebhookProperty struct {
 	Body        string
 }
 
+func (p ActionWebhookProperty) Verify() error {
+
+	switch p.Method {
+	case http.MethodPost, http.MethodPut:
+	default:
+		if p.Body != "" {
+			return fmt.Errorf("%s method does not use body field [%s]", p.Method, p.Body)
+		}
+	}
+	return nil
+}
 func (p ActionWebhookProperty) toProperty() Properties {
-	return Properties{
+	prop := Properties{
 		"url":         p.URL,
 		"httpMethod":  p.Method,
 		"contentType": p.ContentType,
-		"body":        p.Body,
 	}
+	switch p.Method {
+	case http.MethodPost, http.MethodPut:
+		prop["body"] = p.Body
+	}
+	return prop
 }
 
 func ActionWebHook(datetimeConst EventDateTimeConst, hookprop ActionWebhookProperty) ActionConfig {
