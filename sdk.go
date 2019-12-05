@@ -470,6 +470,10 @@ func (p StatsPeriod) Parse(s string) StatsPeriod {
 // SpeedClass represents one of speed classes
 type SpeedClass string
 
+func (s SpeedClass) String() string {
+	return string(s)
+}
+
 const (
 	// SpeedClassS1Minimum is s1.minimum
 	SpeedClassS1Minimum SpeedClass = "s1.minimum"
@@ -482,6 +486,9 @@ const (
 
 	// SpeedClassS1Fast is s1.fast
 	SpeedClassS1Fast SpeedClass = "s1.fast"
+
+	// SpeedClassS1Fast is s1.fast
+	SpeedClassS14xFast SpeedClass = "s1.4xfast"
 )
 
 // AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
@@ -856,6 +863,12 @@ const (
 
 	// EventHandlerActionTypeInvokeAWSLambda indicates a type of action to be invoked to invoke AWS Lambda function once a condition is satisfied
 	EventHandlerActionTypeInvokeAWSLambda EventHandlerActionType = "InvokeAWSLambdaAction"
+
+	EventHandlerActionTypeExecuteWebRequest EventHandlerActionType = "ExecuteWebRequestAction"
+
+	EventHandlerActionTypeActivate EventHandlerActionType = "ActivateAction"
+
+	EventHandlerActionTypeDeactivate EventHandlerActionType = "DeactivateAction"
 )
 
 // ActionConfig contains an action to be invoked when a condition is satisfied
@@ -943,7 +956,7 @@ type CreateEventHandlerOptions struct {
 	Name             string         `json:"name"`
 	Description      string         `json:"description"`
 	RuleConfig       RuleConfig     `json:"ruleConfig"`
-	Status           string         `json:"status"`
+	Status           EventStatus    `json:"status"`
 	ActionConfigList []ActionConfig `json:"actionConfigList"`
 }
 

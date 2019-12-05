@@ -1536,24 +1536,12 @@ func TestCreateEventHandler(t *testing.T) {
 
 	o := &CreateEventHandlerOptions{
 		TargetIMSI:  &imsi,
-		Status:      "active",
+		Status:      EventStatusActive,
 		Name:        "Test Event handler Name",
 		Description: "Test Event Handler Description",
-		RuleConfig: RuleConfig{
-			Type: EventHandlerRuleTypeDailyTraffic,
-			Properties: Properties{
-				"inactiveTimeoutDateConst":  "BEGINNING_OF_NEXT_MONTH",
-				"limitTotalTrafficMegaByte": "1000",
-			},
-		},
+		RuleConfig:  RuleDailyTraffic(1000, BEGINNING_OF_NEXT_MONTH),
 		ActionConfigList: []ActionConfig{
-			ActionConfig{
-				Type: EventHandlerActionTypeChangeSpeedClass,
-				Properties: Properties{
-					"speedClass":             "s1.minimum",
-					"executionDateTimeConst": "IMMEDIATELY",
-				},
-			},
+			ActionChangeSpeed(IMMEDIATELY, SpeedClassS1Minimum),
 		},
 	}
 	err := apiClient.CreateEventHandler(o)
