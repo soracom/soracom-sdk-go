@@ -60,7 +60,7 @@ func ActionActivate(datetimeConst EventDateTimeConst) ActionConfig {
 	return buildActionConfig(EventHandlerActionTypeActivate, datetimeConst, Properties{})
 }
 
-func ActionDectivate(datetimeConst EventDateTimeConst) ActionConfig {
+func ActionDeactivate(datetimeConst EventDateTimeConst) ActionConfig {
 	return buildActionConfig(EventHandlerActionTypeDeactivate, datetimeConst, Properties{})
 }
 

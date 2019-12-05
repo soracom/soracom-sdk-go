@@ -1553,7 +1553,7 @@ func TestCreateEventHandler(t *testing.T) {
 				Method:      http.MethodGet,
 				ContentType: "application/json",
 			}),
-			ActionDectivate(IMMEDIATELY),
+			ActionDeactivate(IMMEDIATELY),
 			ActionActivate(BEGINNING_OF_NEXT_MONTH),
 		},
 	}
