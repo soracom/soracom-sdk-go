@@ -974,7 +974,7 @@ func (ac *APIClient) ListEventHandlers(options *ListEventHandlersOptions) ([]Eve
 }
 
 // CreateEventHandler creates an event handler
-func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) error {
+func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) (*EventHandler, error) {
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/event_handlers",
@@ -984,19 +984,15 @@ func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) erro
 
 	resp, err := ac.callAPI(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	/*
-		eventHandler, err := parseEventHandler(resp)
-		if err != nil {
-			return nil, err
-		}
-		return eventHandler, nil
-	*/
-
-	return nil
+	eventHandler, err := parseEventHandler(resp)
+	if err != nil {
+		return nil, err
+	}
+	return eventHandler, nil
 }
 
 // ListEventHandlersForSubscriber creates an event handler with the specified options

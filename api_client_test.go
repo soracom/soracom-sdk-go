@@ -1557,11 +1557,21 @@ func TestCreateEventHandler(t *testing.T) {
 			ActionActivate(BEGINNING_OF_NEXT_MONTH),
 		},
 	}
-	err := apiClient.CreateEventHandler(o)
+	eh, err := apiClient.CreateEventHandler(o)
 	if err != nil {
 		t.Fatalf("CreateEventHandler() failed: %v", err.Error())
 	}
-	//defer apiClient.DeleteEventHandler(eh1.HandlerID)
+
+	if eh.HandlerID == "" {
+		t.Fatalf("CreateEventHandler() failed: has not HandlerID")
+	}
+	if eh.Name != o.Name {
+		t.Fatalf("CreateEventHandler() failed: unmatch handler name want: %s, got:%s", o.Name, eh.Name)
+	}
+
+	if eh.Description != o.Description {
+		t.Fatalf("CreateEventHandler() failed: unmatch handler Description want: %s, got:%s", o.Description, eh.Description)
+	}
 }
 
 func TestListEventHandlers(t *testing.T) {
