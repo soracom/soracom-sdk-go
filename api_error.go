@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -34,19 +35,16 @@ func NewAPIError(resp *http.Response) *APIError {
 	if strings.Index(ct, "text/plain") == 0 {
 		errorCode = "UNK0001"
 		message = readAll(resp.Body)
-	} else if strings.Index(ct, "application/json") == 0 {
+	} else {
 		if resp.StatusCode >= http.StatusBadRequest &&
 			resp.StatusCode < http.StatusInternalServerError {
 			aer := parseAPIErrorResponse(resp)
-			errorCode = aer.ErrorCode
+			errorCode = strconv.Itoa(resp.StatusCode)
 			message = fmt.Sprintf(aer.Message, aer.MessageArgs)
 		} else {
 			errorCode = ""
 			message = readAll(resp.Body)
 		}
-	} else {
-		errorCode = "INT0001"
-		message = "Content-Type: " + ct + " is not supported"
 	}
 	return &APIError{
 		ErrorCode: errorCode,

@@ -1250,6 +1250,15 @@ func TestGetGroup(t *testing.T) {
 	}
 }
 
+func TestGetGroupError(t *testing.T) {
+	_, err := apiClient.GetGroup("wrong_group_id")
+	apiError := err.(*APIError)
+
+	if apiError.ErrorCode != "404" {
+		t.Fatalf("GetGroup() returns wrong http status code")
+	}
+}
+
 func TestListSubscribersInGroup(t *testing.T) {
 	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
 	groupCreated, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
