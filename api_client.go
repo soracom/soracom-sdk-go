@@ -1179,7 +1179,7 @@ func (ac *APIClient) CreateCoupon(options *CreatedCouponOptions) (*CreatedCoupon
 	return cc, nil
 }
 
-// CreateCredential sends a request to create a brand-new credential
+// CreateCredentialWithName sends a request to create a brand-new credential
 func (ac *APIClient) CreateCredentialWithName(name string, options *CredentialOptions) (*CreatedCredential, error) {
 	params := &apiParams{
 		method:      "POST",
