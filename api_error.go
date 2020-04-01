@@ -9,8 +9,9 @@ import (
 
 // APIError represents an error ocurred while calling API
 type APIError struct {
-	ErrorCode string
-	Message   string
+	HTTPStatusCode int
+	ErrorCode      string
+	Message        string
 }
 
 type apiErrorResponse struct {
@@ -49,8 +50,9 @@ func NewAPIError(resp *http.Response) *APIError {
 		message = "Content-Type: " + ct + " is not supported"
 	}
 	return &APIError{
-		ErrorCode: errorCode,
-		Message:   message,
+		HTTPStatusCode: resp.StatusCode,
+		ErrorCode:      errorCode,
+		Message:        message,
 	}
 }
 
