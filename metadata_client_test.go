@@ -10,7 +10,13 @@ var (
 	metadataClient *MetadataClient
 )
 
+var isMetaDataTestEnabled = os.Getenv("METADATA_TEST_ENABLED") != ""
+
 func TestMetadataInit(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	endpoint := os.Getenv("SORACOM_METADATA_ENDPOINT")
 	options := &MetadataClientOptions{
 		Endpoint: endpoint,
@@ -24,6 +30,10 @@ func TestMetadataInit(t *testing.T) {
 }
 
 func TestMetadataGetSubscriber(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	_, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
@@ -31,6 +41,10 @@ func TestMetadataGetSubscriber(t *testing.T) {
 }
 
 func TestMetadataUdpateSpeedClass(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	sub, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
@@ -64,6 +78,10 @@ func TestMetadataUdpateSpeedClass(t *testing.T) {
 }
 
 func TestMetadataEnableDisableTermination(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	sub, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
@@ -108,6 +126,10 @@ func timeToUnixMilli(t time.Time) int64 {
 }
 
 func TestMetadataSetUnsetExpiredAt(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	sub, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
@@ -144,6 +166,10 @@ func TestMetadataSetUnsetExpiredAt(t *testing.T) {
 }
 
 func TestMetadataSetUnsetGroup(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	sub, err := metadataClient.GetSubscriber()
 	if err != nil {
 		t.Fatalf("GetSubscriber() failed: %v", err.Error())
@@ -176,6 +202,10 @@ func TestMetadataSetUnsetGroup(t *testing.T) {
 }
 
 func TestMetadataPutDeleteTags(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	n1 := "metadata-test-tag-name-1"
 	//n1 := "metadata test tag name 1" // half width spaces must be tested
 	v1 := "metadata test tag value 1"
@@ -236,6 +266,10 @@ func TestMetadataPutDeleteTags(t *testing.T) {
 }
 
 func TestMetadataGetUserdata(t *testing.T) {
+	if !isMetaDataTestEnabled {
+		t.Skip("metadata testing is disabled")
+	}
+
 	_, err := metadataClient.GetUserdata()
 	if err != nil {
 		t.Fatalf("GetUserdata() failed: %v", err.Error())

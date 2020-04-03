@@ -75,3 +75,13 @@ func main() {
 もう少し詳しい使い方は
 http://qiita.com/bearmini/items/6e3f66bc0ef846c8d197
 を参照してください。
+
+## For developers
+
+### how to run test
+
+TBD
+
+#### how to run test with metadata tests
+
+Please run tests with not-empty environment variable `$METADATA_TEST_ENABLED`. 
