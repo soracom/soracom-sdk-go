@@ -270,6 +270,7 @@ func (rso *RegisterSubscriberOptions) JSON() string {
 	return toJSON(rso)
 }
 
+// IMEILock keeps IMEI lock information
 type IMEILock struct {
 	IMEI string `json:"imei"`
 }
@@ -487,7 +488,7 @@ const (
 	// SpeedClassS1Fast is s1.fast
 	SpeedClassS1Fast SpeedClass = "s1.fast"
 
-	// SpeedClassS1Fast is s1.fast
+	// SpeedClassS14xFast is s1.4xfast
 	SpeedClassS14xFast SpeedClass = "s1.4xfast"
 )
 
@@ -864,10 +865,13 @@ const (
 	// EventHandlerActionTypeInvokeAWSLambda indicates a type of action to be invoked to invoke AWS Lambda function once a condition is satisfied
 	EventHandlerActionTypeInvokeAWSLambda EventHandlerActionType = "InvokeAWSLambdaAction"
 
+	// EventHandlerActionTypeExecuteWebRequest indicates a type of action to be invoked to request to Web once a condition is satisfied
 	EventHandlerActionTypeExecuteWebRequest EventHandlerActionType = "ExecuteWebRequestAction"
 
+	// EventHandlerActionTypeActivate indicates a type of action to be invoked to activate SIM
 	EventHandlerActionTypeActivate EventHandlerActionType = "ActivationAction"
 
+	// EventHandlerActionTypeDeactivate indicates a type of action to be invoked to de-activate SIM
 	EventHandlerActionTypeDeactivate EventHandlerActionType = "DeactivationAction"
 )
 
@@ -1080,6 +1084,7 @@ func (cc *CreatedCredential) String() string {
 	return toJSON(cc)
 }
 
+// ListSessionEventsOption holds options for ListSessionEvents()
 type ListSessionEventsOption struct {
 	From             time.Time `json:"from"`
 	To               time.Time `json:"to"`
@@ -1109,6 +1114,7 @@ func (o ListSessionEventsOption) queryString() url.Values {
 	return v
 }
 
+// SessionEvent keeps information of session event
 type SessionEvent struct {
 	IMSI        string    `json:"imsi"`
 	Time        time.Time `json:"createdTime"`

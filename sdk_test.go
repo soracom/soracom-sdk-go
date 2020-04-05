@@ -10,7 +10,7 @@ func TestMarshals(t *testing.T) {
 
 		testdata := `[
   {
-    "imsi": "000050910800000",
+    "imsi": "001050910800000",
     "time": 1574853374100,
     "createdTime": "2019-11-27T07:15:19.544Z",
     "operatorId": "OP9999209600",
@@ -27,10 +27,10 @@ func TestMarshals(t *testing.T) {
       "tac": 21,
       "eci": 67387471
     },
-    "primaryImsi": "000050910800000"
+    "primaryImsi": "001050910800000"
   },
   {
-    "imsi": "000050910800000",
+    "imsi": "001050910800000",
     "time": 1574838919544,
     "createdTime": "2019-11-27T07:15:19.544Z",
     "operatorId": "OP9999209600",
@@ -47,10 +47,10 @@ func TestMarshals(t *testing.T) {
       "tac": 21,
       "eci": 67387471
     },
-    "primaryImsi": "000050910800000"
+    "primaryImsi": "001050910800000"
   },
   {
-    "imsi": "000050910800000",
+    "imsi": "001050910800000",
     "time": 1574838918340,
     "createdTime": "2019-11-27T07:14:17.717Z",
     "operatorId": "OP9999209600",
@@ -67,10 +67,10 @@ func TestMarshals(t *testing.T) {
       "tac": 21,
       "eci": 67387471
     },
-    "primaryImsi": "000050910800000"
+    "primaryImsi": "001050910800000"
   },
   {
-    "imsi": "000050910800000",
+    "imsi": "001050910800000",
     "time": 1574838857717,
     "createdTime": "2019-11-27T07:14:17.717Z",
     "operatorId": "OP9999209600",
@@ -87,7 +87,7 @@ func TestMarshals(t *testing.T) {
       "tac": 21,
       "eci": 67387471
     },
-    "primaryImsi": "000050910800000"
+    "primaryImsi": "001050910800000"
   }
 ]`
 

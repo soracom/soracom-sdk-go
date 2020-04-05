@@ -1539,22 +1539,22 @@ func TestCreateEventHandler(t *testing.T) {
 		Status:      EventStatusActive,
 		Name:        "Test Event handler Name",
 		Description: "Test Event Handler Description",
-		RuleConfig:  RuleDailyTraffic(1000, BEGINNING_OF_NEXT_MONTH),
+		RuleConfig:  RuleDailyTraffic(1000, EventDateTimeBeginningOfNextMonth),
 		ActionConfigList: []ActionConfig{
-			ActionChangeSpeed(IMMEDIATELY, SpeedClassS1Minimum),
-			ActionWebHook(IMMEDIATELY, ActionWebhookProperty{
+			ActionChangeSpeed(EventDateTimeImmediately, SpeedClassS1Minimum),
+			ActionWebHook(EventDateTimeImmediately, ActionWebhookProperty{
 				URL:         "https://example.com/my/api",
 				Method:      http.MethodPost,
 				ContentType: "application/json",
 				Body:        `{"message":"Hello world"}`,
 			}),
-			ActionWebHook(IMMEDIATELY, ActionWebhookProperty{
+			ActionWebHook(EventDateTimeImmediately, ActionWebhookProperty{
 				URL:         "https://example.com/my/api",
 				Method:      http.MethodGet,
 				ContentType: "application/json",
 			}),
-			ActionDeactivate(IMMEDIATELY),
-			ActionActivate(BEGINNING_OF_NEXT_MONTH),
+			ActionDeactivate(EventDateTimeImmediately),
+			ActionActivate(EventDateTimeBeginningOfNextMonth),
 		},
 	}
 	eh, err := apiClient.CreateEventHandler(o)

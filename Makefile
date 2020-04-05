@@ -2,8 +2,9 @@
 setup:
 	go get .
 
+lint:
+	golint ./...
+
 test:
 	go vet ./...
-
-	# test api client (ignore metadata client)
-	go test -v -race -p=1 ./... -run "^Test[ABCDEFGHIJKLNOPQRSTUVWXYZ].+"
+	go test -v -race -p=1 ./...

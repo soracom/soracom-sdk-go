@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// EventDateTimeConst is the time value that can be specified when execute a rule, enable, or disable
 type EventDateTimeConst string
 
 func (x EventDateTimeConst) String() string {
@@ -13,15 +14,26 @@ func (x EventDateTimeConst) String() string {
 }
 
 const (
-	IMMEDIATELY             = "IMMEDIATELY"
-	AFTER_ONE_DAY           = "AFTER_ONE_DAY"
-	BEGINNING_OF_NEXT_DAY   = "BEGINNING_OF_NEXT_DAY"
-	BEGINNING_OF_NEXT_MONTH = "BEGINNING_OF_NEXT_MONTH"
-	NEVER                   = "NEVER"
+	// EventDateTimeImmediately is immediately
+	EventDateTimeImmediately EventDateTimeConst = "IMMEDIATELY"
+
+	// EventDateTimeAfterOneDay is one day (24 hours) later
+	EventDateTimeAfterOneDay EventDateTimeConst = "AFTER_ONE_DAY"
+
+	// EventDateTimeBeginningOfNextDay is ...
+	EventDateTimeBeginningOfNextDay EventDateTimeConst = "BEGINNING_OF_NEXT_DAY"
+
+	// EventDateTimeBeginningOfNextMonth is ...
+	EventDateTimeBeginningOfNextMonth EventDateTimeConst = "BEGINNING_OF_NEXT_MONTH"
+
+	// EventDateTimeNever is ...
+	EventDateTimeNever EventDateTimeConst = "NEVER"
 )
 
+// EventStatus is status of EventHandler
 type EventStatus string
 
+// EventStatus is one of active or inactive
 const (
 	EventStatusActive   EventStatus = "active"
 	EventStatusInactive EventStatus = "inactive"
@@ -34,6 +46,7 @@ func buildRuleConfig(evrtype EventHandlerRuleType, datetimeConst EventDateTimeCo
 		Properties: prop,
 	}
 }
+
 func buildActionConfig(acttype EventHandlerActionType, datetimeConst EventDateTimeConst, prop Properties) ActionConfig {
 	prop["executionDateTimeConst"] = datetimeConst.String()
 	return ActionConfig{
@@ -42,28 +55,33 @@ func buildActionConfig(acttype EventHandlerActionType, datetimeConst EventDateTi
 	}
 }
 
-func RuleDailyTraffic(mib uint64, datetimeConst EventDateTimeConst) RuleConfig {
+// RuleDailyTraffic build daily traffic RuleConfig
+func RuleDailyTraffic(mib uint64, inactiveDatetime EventDateTimeConst) RuleConfig {
 	prop := Properties{
 		"limitTotalTrafficMegaByte": strconv.FormatUint(mib, 10),
 	}
-	return buildRuleConfig(EventHandlerRuleTypeDailyTraffic, datetimeConst, prop)
+	return buildRuleConfig(EventHandlerRuleTypeDailyTraffic, inactiveDatetime, prop)
 }
 
-func RuleMonthlyTraffic(mib uint64, datetimeConst EventDateTimeConst) RuleConfig {
+// RuleMonthlyTraffic build monthly traffic RuleConfig
+func RuleMonthlyTraffic(mib uint64, inactiveDatetime EventDateTimeConst) RuleConfig {
 	prop := Properties{
 		"limitTotalTrafficMegaByte": strconv.FormatUint(mib, 10),
 	}
-	return buildRuleConfig(EventHandlerRuleTypeMonthlyTraffic, datetimeConst, prop)
+	return buildRuleConfig(EventHandlerRuleTypeMonthlyTraffic, inactiveDatetime, prop)
 }
 
-func ActionActivate(datetimeConst EventDateTimeConst) ActionConfig {
-	return buildActionConfig(EventHandlerActionTypeActivate, datetimeConst, Properties{})
+// ActionActivate build Activate Action
+func ActionActivate(executionDateTime EventDateTimeConst) ActionConfig {
+	return buildActionConfig(EventHandlerActionTypeActivate, executionDateTime, Properties{})
 }
 
-func ActionDeactivate(datetimeConst EventDateTimeConst) ActionConfig {
-	return buildActionConfig(EventHandlerActionTypeDeactivate, datetimeConst, Properties{})
+// ActionDeactivate build Deactivate Action
+func ActionDeactivate(executionDateTime EventDateTimeConst) ActionConfig {
+	return buildActionConfig(EventHandlerActionTypeDeactivate, executionDateTime, Properties{})
 }
 
+// ActionWebhookProperty keeps value of webhook property
 type ActionWebhookProperty struct {
 	URL         string
 	Method      string
@@ -71,8 +89,8 @@ type ActionWebhookProperty struct {
 	Body        string
 }
 
+// Verify is check properties
 func (p ActionWebhookProperty) Verify() error {
-
 	switch p.Method {
 	case http.MethodPost, http.MethodPut:
 	default:
@@ -82,6 +100,7 @@ func (p ActionWebhookProperty) Verify() error {
 	}
 	return nil
 }
+
 func (p ActionWebhookProperty) toProperty() Properties {
 	prop := Properties{
 		"url":         p.URL,
@@ -95,15 +114,18 @@ func (p ActionWebhookProperty) toProperty() Properties {
 	return prop
 }
 
-func ActionWebHook(datetimeConst EventDateTimeConst, hookprop ActionWebhookProperty) ActionConfig {
-	return buildActionConfig(EventHandlerActionTypeExecuteWebRequest, datetimeConst, hookprop.toProperty())
+// ActionWebHook build webhook action config
+func ActionWebHook(executionDateTime EventDateTimeConst, hookprop ActionWebhookProperty) ActionConfig {
+	return buildActionConfig(EventHandlerActionTypeExecuteWebRequest, executionDateTime, hookprop.toProperty())
 }
 
-func ActionChangeSpeed(datetimeConst EventDateTimeConst, s SpeedClass) ActionConfig {
+// ActionChangeSpeed build change speed action config
+func ActionChangeSpeed(executionDateTime EventDateTimeConst, s SpeedClass) ActionConfig {
 	prop := Properties{"speedClass": s.String()}
-	return buildActionConfig(EventHandlerActionTypeChangeSpeedClass, datetimeConst, prop)
+	return buildActionConfig(EventHandlerActionTypeChangeSpeedClass, executionDateTime, prop)
 }
 
+// ActionSendEmailProperty keeps value of email property
 type ActionSendEmailProperty struct {
 	To      string
 	Title   string
@@ -117,6 +139,8 @@ func (p ActionSendEmailProperty) toProperty() Properties {
 		"message": p.Message,
 	}
 }
+
+// ActionSendEmail buils send email config
 func ActionSendEmail(datetimeConst EventDateTimeConst, mailprop ActionSendEmailProperty) ActionConfig {
 	return buildActionConfig(EventHandlerActionTypeExecuteWebRequest, datetimeConst, mailprop.toProperty())
 }
