@@ -21,8 +21,8 @@ jobs:
 
     - name: Lint
       run: |
-        GOBIN=$PWD/bin go install golang.org/x/lint/golint
-        ./bin/golint ./...
+        GOBIN="$PWD/bin" go install golang.org/x/lint/golint
+        PATH="$PATH:$PWD/bin" make lint
 
     - name: Test
       run: make test
