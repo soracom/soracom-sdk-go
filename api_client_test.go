@@ -1331,8 +1331,8 @@ func TestUpdateGroupConfigurations(t *testing.T) {
 	}
 
 	g1, err := apiClient.UpdateGroupConfigurations(group.GroupID, "SoracomAir", []GroupConfig{
-		GroupConfig{Key: "useCustomDns", Value: true},
-		GroupConfig{Key: "dnsServers", Value: []string{"8.8.8.8", "8.8.4.4"}},
+		{Key: "useCustomDns", Value: true},
+		{Key: "dnsServers", Value: []string{"8.8.8.8", "8.8.4.4"}},
 	})
 	if err != nil {
 		t.Fatalf("UpdateGroupConfigurations() failed: %v", err.Error())
@@ -1346,7 +1346,7 @@ func TestUpdateGroupConfigurations(t *testing.T) {
 	}
 
 	g2, err := apiClient.UpdateGroupConfigurations(group.GroupID, "SoracomBeam", []GroupConfig{
-		GroupConfig{Key: "tcp://beam.soracom.io:8023", Value: beamTCPConfig},
+		{Key: "tcp://beam.soracom.io:8023", Value: beamTCPConfig},
 	})
 	if err != nil {
 		t.Fatalf("UpdateGroupConfigurations() failed: %v", err.Error())
@@ -1484,8 +1484,8 @@ func TestUpdateGroupTags(t *testing.T) {
 	defer apiClient.DeleteGroup(group.GroupID)
 
 	g, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
-		Tag{TagName: "name1", TagValue: "value1"},
-		Tag{TagName: "name2", TagValue: "value2"},
+		{TagName: "name1", TagValue: "value1"},
+		{TagName: "name2", TagValue: "value2"},
 	})
 	if err != nil {
 		t.Fatalf("UpdateGroupTags() failed: %v", err.Error())
@@ -1505,8 +1505,8 @@ func TestDeleteGroupTag(t *testing.T) {
 	defer apiClient.DeleteGroup(group.GroupID)
 
 	g1, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
-		Tag{TagName: "name1", TagValue: "value1"},
-		Tag{TagName: "name2", TagValue: "value2"},
+		{TagName: "name1", TagValue: "value1"},
+		{TagName: "name2", TagValue: "value2"},
 	})
 	if err != nil {
 		t.Fatalf("UpdateGroupTags() failed: %v", err.Error())
