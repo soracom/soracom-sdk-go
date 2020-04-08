@@ -434,6 +434,65 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 	return subscriber, nil
 }
 
+// ListSessionEvents get session events
+func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOption) ([]SessionEvent, error) {
+	params := &apiParams{
+		method:      "GET",
+		path:        fmt.Sprintf("/v1/subscribers/%s/events/sessions", imsi),
+		contentType: "application/json",
+	}
+
+	params.query = options.queryString().Encode()
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return parseListSessionEvents(resp.Body)
+}
+
+// Suspend suspend a subscriber.
+func (ac *APIClient) Suspend(imsi string) (*Subscriber, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/subscribers/" + imsi + "/suspend",
+		contentType: "application/json",
+		body:        "{}",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	subscriber := parseSubscriber(resp)
+
+	return subscriber, nil
+}
+
+// SetToStandby set to standby a subscriber.
+func (ac *APIClient) SetToStandby(imsi string) (*Subscriber, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/subscribers/" + imsi + "/set_to_standby",
+		contentType: "application/json",
+		body:        "{}",
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	subscriber := parseSubscriber(resp)
+
+	return subscriber, nil
+}
+
 // SetSubscriberExpiredAt sets expiration time of a subscriber.
 func (ac *APIClient) SetSubscriberExpiredAt(imsi string, expiryTime time.Time) (*Subscriber, error) {
 	ts := &TimestampMilli{Time: expiryTime}
@@ -915,7 +974,7 @@ func (ac *APIClient) ListEventHandlers(options *ListEventHandlersOptions) ([]Eve
 }
 
 // CreateEventHandler creates an event handler
-func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) error {
+func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) (*EventHandler, error) {
 	params := &apiParams{
 		method:      "POST",
 		path:        "/v1/event_handlers",
@@ -925,19 +984,15 @@ func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) erro
 
 	resp, err := ac.callAPI(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	/*
-		eventHandler, err := parseEventHandler(resp)
-		if err != nil {
-			return nil, err
-		}
-		return eventHandler, nil
-	*/
-
-	return nil
+	eventHandler, err := parseEventHandler(resp)
+	if err != nil {
+		return nil, err
+	}
+	return eventHandler, nil
 }
 
 // ListEventHandlersForSubscriber creates an event handler with the specified options

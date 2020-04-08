@@ -968,6 +968,30 @@ func TestEnableTermination(t *testing.T) {
 	}
 }
 
+func TestSessionEvent(t *testing.T) {
+	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
+		StatusFilter: "active|inactive|ready",
+		Limit:        1,
+	})
+	if err != nil || len(subs) == 0 {
+		t.Fatalf("At least 1 non-terminated subscriber is required")
+	}
+	imsi := subs[0].IMSI
+
+	opt := &ListSessionEventsOption{
+		// From:  time.Now().Add(time.Hour * -24),
+		// To:    time.Now(),
+		Limit: 1,
+	}
+	result, err := apiClient.ListSessionEvents(imsi, opt)
+	if err != nil {
+		t.Fatalf("Error occurred on ListSessionEvents: %s", err)
+	}
+	if len(result) > 0 {
+		t.Logf("found event %d", len(result))
+	}
+}
+
 func TestSetSubscriberExpiredAt(t *testing.T) {
 	subs, _, err := apiClient.ListSubscribers(&ListSubscribersOptions{
 		StatusFilter: "active",
@@ -1512,31 +1536,42 @@ func TestCreateEventHandler(t *testing.T) {
 
 	o := &CreateEventHandlerOptions{
 		TargetIMSI:  &imsi,
-		Status:      "active",
+		Status:      EventStatusActive,
 		Name:        "Test Event handler Name",
 		Description: "Test Event Handler Description",
-		RuleConfig: RuleConfig{
-			Type: EventHandlerRuleTypeDailyTraffic,
-			Properties: Properties{
-				"inactiveTimeoutDateConst":  "BEGINNING_OF_NEXT_MONTH",
-				"limitTotalTrafficMegaByte": "1000",
-			},
-		},
+		RuleConfig:  RuleDailyTraffic(1000, EventDateTimeBeginningOfNextMonth),
 		ActionConfigList: []ActionConfig{
-			ActionConfig{
-				Type: EventHandlerActionTypeChangeSpeedClass,
-				Properties: Properties{
-					"speedClass":             "s1.minimum",
-					"executionDateTimeConst": "IMMEDIATELY",
-				},
-			},
+			ActionChangeSpeed(EventDateTimeImmediately, SpeedClassS1Minimum),
+			ActionWebHook(EventDateTimeImmediately, ActionWebhookProperty{
+				URL:         "https://example.com/my/api",
+				Method:      http.MethodPost,
+				ContentType: "application/json",
+				Body:        `{"message":"Hello world"}`,
+			}),
+			ActionWebHook(EventDateTimeImmediately, ActionWebhookProperty{
+				URL:         "https://example.com/my/api",
+				Method:      http.MethodGet,
+				ContentType: "application/json",
+			}),
+			ActionDeactivate(EventDateTimeImmediately),
+			ActionActivate(EventDateTimeBeginningOfNextMonth),
 		},
 	}
-	err := apiClient.CreateEventHandler(o)
+	eh, err := apiClient.CreateEventHandler(o)
 	if err != nil {
 		t.Fatalf("CreateEventHandler() failed: %v", err.Error())
 	}
-	//defer apiClient.DeleteEventHandler(eh1.HandlerID)
+
+	if eh.HandlerID == "" {
+		t.Fatalf("CreateEventHandler() failed: has not HandlerID")
+	}
+	if eh.Name != o.Name {
+		t.Fatalf("CreateEventHandler() failed: unmatch handler name want: %s, got:%s", o.Name, eh.Name)
+	}
+
+	if eh.Description != o.Description {
+		t.Fatalf("CreateEventHandler() failed: unmatch handler Description want: %s, got:%s", o.Description, eh.Description)
+	}
 }
 
 func TestListEventHandlers(t *testing.T) {

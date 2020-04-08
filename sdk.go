@@ -270,6 +270,7 @@ func (rso *RegisterSubscriberOptions) JSON() string {
 	return toJSON(rso)
 }
 
+// IMEILock keeps IMEI lock information
 type IMEILock struct {
 	IMEI string `json:"imei"`
 }
@@ -470,6 +471,10 @@ func (p StatsPeriod) Parse(s string) StatsPeriod {
 // SpeedClass represents one of speed classes
 type SpeedClass string
 
+func (s SpeedClass) String() string {
+	return string(s)
+}
+
 const (
 	// SpeedClassS1Minimum is s1.minimum
 	SpeedClassS1Minimum SpeedClass = "s1.minimum"
@@ -482,6 +487,9 @@ const (
 
 	// SpeedClassS1Fast is s1.fast
 	SpeedClassS1Fast SpeedClass = "s1.fast"
+
+	// SpeedClassS14xFast is s1.4xfast
+	SpeedClassS14xFast SpeedClass = "s1.4xfast"
 )
 
 // AirStatsForSpeedClass holds Upload/Download Bytes/Packets for a speed class
@@ -856,6 +864,15 @@ const (
 
 	// EventHandlerActionTypeInvokeAWSLambda indicates a type of action to be invoked to invoke AWS Lambda function once a condition is satisfied
 	EventHandlerActionTypeInvokeAWSLambda EventHandlerActionType = "InvokeAWSLambdaAction"
+
+	// EventHandlerActionTypeExecuteWebRequest indicates a type of action to be invoked to request to Web once a condition is satisfied
+	EventHandlerActionTypeExecuteWebRequest EventHandlerActionType = "ExecuteWebRequestAction"
+
+	// EventHandlerActionTypeActivate indicates a type of action to be invoked to activate SIM
+	EventHandlerActionTypeActivate EventHandlerActionType = "ActivationAction"
+
+	// EventHandlerActionTypeDeactivate indicates a type of action to be invoked to de-activate SIM
+	EventHandlerActionTypeDeactivate EventHandlerActionType = "DeactivationAction"
 )
 
 // ActionConfig contains an action to be invoked when a condition is satisfied
@@ -943,7 +960,7 @@ type CreateEventHandlerOptions struct {
 	Name             string         `json:"name"`
 	Description      string         `json:"description"`
 	RuleConfig       RuleConfig     `json:"ruleConfig"`
-	Status           string         `json:"status"`
+	Status           EventStatus    `json:"status"`
 	ActionConfigList []ActionConfig `json:"actionConfigList"`
 }
 
@@ -1065,6 +1082,63 @@ type CreatedCredential struct {
 
 func (cc *CreatedCredential) String() string {
 	return toJSON(cc)
+}
+
+// ListSessionEventsOption holds options for ListSessionEvents()
+type ListSessionEventsOption struct {
+	From             time.Time `json:"from"`
+	To               time.Time `json:"to"`
+	Limit            int       `json:"limit"`
+	LastEvaluatedKey string    `json:"last_evaluated_key"`
+}
+
+func (o ListSessionEventsOption) queryString() url.Values {
+
+	v := url.Values{}
+	if !o.From.IsZero() {
+		v.Add("from", strconv.FormatInt(o.From.Unix(), 10))
+	}
+
+	if !o.To.IsZero() {
+		v.Add("to", strconv.FormatInt(o.To.Unix(), 10))
+	}
+
+	if o.Limit > 0 {
+		v.Add("limit", strconv.FormatInt(int64(o.Limit), 10))
+	}
+
+	if len(o.LastEvaluatedKey) > 0 {
+		v.Add("last_evaluated_key", o.LastEvaluatedKey)
+	}
+
+	return v
+}
+
+// SessionEvent keeps information of session event
+type SessionEvent struct {
+	IMSI        string    `json:"imsi"`
+	Time        time.Time `json:"createdTime"`
+	OperatorId  string    `json:"operatorId"`
+	Event       string    `json:"event"`
+	UEIPAddress string    `json:"ueIpAddress"`
+	IMEI        string    `json:"imei"`
+	APN         string    `json:"apn"`
+	DNS0        string    `json:"dns0"`
+	DNS1        string    `json:"dns1"`
+	Cell        Cell      `json:"cell"`
+	PrimaryIMSI string    `json:"primaryImsi"`
+}
+
+func parseListSessionEvents(r io.Reader) ([]SessionEvent, error) {
+
+	var events []SessionEvent
+
+	dec := json.NewDecoder(r)
+	err := dec.Decode(&events)
+	if err != nil {
+		return nil, err
+	}
+	return events, err
 }
 
 func parseCreatedCredential(resp *http.Response) (*CreatedCredential, error) {
