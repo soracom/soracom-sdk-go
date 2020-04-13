@@ -880,7 +880,7 @@ func (ac *APIClient) UpdateBeamTCPConfig(groupID, entryPoint string, beamTCPConf
 		path:        "/v1/groups/" + groupID + "/configuration/SoracomBeam",
 		contentType: "application/json",
 		body: toJSON([]GroupConfig{
-			GroupConfig{Key: entryPoint, Value: beamTCPConfig},
+			{Key: entryPoint, Value: beamTCPConfig},
 		}),
 	}
 

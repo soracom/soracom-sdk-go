@@ -214,8 +214,8 @@ func TestMetadataPutDeleteTags(t *testing.T) {
 	v2 := "metadata test tag value 2"
 
 	sub, err := metadataClient.PutTags([]Tag{
-		Tag{TagName: n1, TagValue: v1},
-		Tag{TagName: n2, TagValue: v2},
+		{TagName: n1, TagValue: v1},
+		{TagName: n2, TagValue: v2},
 	})
 	if err != nil {
 		t.Fatalf("PutTags() failed: %v", err.Error())

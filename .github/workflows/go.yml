@@ -19,6 +19,11 @@ jobs:
       run: |
         go get -v -t -d ./...
 
+    - name: Format check
+      run: |
+        GOBIN=$PWD/bin go install golang.org/x/tools/cmd/goimports
+        PATH="$PATH:$PWD/bin" make fmt-check
+
     - name: Lint
       run: |
         GOBIN="$PWD/bin" go install golang.org/x/lint/golint

@@ -742,8 +742,8 @@ type AirConfig struct {
 // JSON converts AirConfig into JSON string
 func (ac *AirConfig) JSON() string {
 	return toJSON([]GroupConfig{
-		GroupConfig{Key: "useCustomDns", Value: ac.UseCustomDNS},
-		GroupConfig{Key: "dnsServers", Value: ac.DNSServers},
+		{Key: "useCustomDns", Value: ac.UseCustomDNS},
+		{Key: "dnsServers", Value: ac.DNSServers},
 	})
 }
 
