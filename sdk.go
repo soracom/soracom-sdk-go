@@ -1026,12 +1026,14 @@ func parseCreatedSubscriber(resp *http.Response) (*CreatedSubscriber, error) {
 	return &v, nil
 }
 
+// CreatedCouponOptions is a structure that represents the request option for CreateCoupon API.
 type CreatedCouponOptions struct {
 	Amount                 int    `json:"amount"`
 	ApplicableBillItemName string `json:"applicableBillItemName"`
 	ExpiryYearMonth        string `json:"expiryYearMonth"`
 }
 
+// CreatedCoupon is a structure that represents the created coupon from CreateCoupon API.
 type CreatedCoupon struct {
 	CouponCode             string `json:"couponCode"`
 	Amount                 int    `json:"amount"`
@@ -1054,11 +1056,13 @@ func (o *CreatedCouponOptions) JSON() string {
 	return toJSON(o)
 }
 
+// Credentials is a structure that represents API credentials.
 type Credentials struct {
 	AccessKeyId     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 }
 
+// CredentialOptions is a structure that represents the request option for CreateCredentialWithName API.
 type CredentialOptions struct {
 	Type        string      `json:"type"`
 	Description string      `json:"description"`
@@ -1070,6 +1074,7 @@ func (o *CredentialOptions) JSON() string {
 	return toJSON(o)
 }
 
+// CreatedCredential is a structure that represents the created credentials from CreateCredentialWithName API.
 type CreatedCredential struct {
 	CredentialID     string          `json:"credentialsId"`
 	Type             string          `json:"type"`
