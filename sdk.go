@@ -1058,8 +1058,11 @@ func (o *CreatedCouponOptions) JSON() string {
 
 // Credentials is a structure that represents API credentials.
 type Credentials struct {
-	AccessKeyId     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyId          string `json:"accessKeyId,omitempty"`
+	SecretAccessKey      string `json:"secretAccessKey,omitempty"`
+	Certificate          string `json:"cert,omitempty"`
+	PrivateKey           string `json:"key,omitempty"`
+	CertificateAuthority string `json:"ca,omitempty"`
 }
 
 // CredentialOptions is a structure that represents the request option for CreateCredentialWithName API.
