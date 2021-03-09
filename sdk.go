@@ -1137,16 +1137,18 @@ type SessionEvent struct {
 	PrimaryIMSI string    `json:"primaryImsi"`
 }
 
-func parseListSessionEvents(r io.Reader) ([]SessionEvent, error) {
-
+func parseListSessionEvents(resp *http.Response) ([]SessionEvent, *PaginationKeys, error) {
 	var events []SessionEvent
 
-	dec := json.NewDecoder(r)
+	dec := json.NewDecoder(resp.Body)
 	err := dec.Decode(&events)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return events, err
+
+	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	pk := parseLinkHeader(linkHeader)
+	return events, pk, err
 }
 
 func parseCreatedCredential(resp *http.Response) (*CreatedCredential, error) {

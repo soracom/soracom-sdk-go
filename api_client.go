@@ -435,7 +435,7 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 }
 
 // ListSessionEvents get session events
-func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOption) ([]SessionEvent, error) {
+func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOption) ([]SessionEvent, *PaginationKeys, error) {
 	params := &apiParams{
 		method:      "GET",
 		path:        fmt.Sprintf("/v1/subscribers/%s/events/sessions", imsi),
@@ -446,11 +446,16 @@ func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOp
 
 	resp, err := ac.callAPI(params)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
-	return parseListSessionEvents(resp.Body)
+	sessionEvents, paginationKeys, err := parseListSessionEvents(resp)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return sessionEvents, paginationKeys, err
 }
 
 // Suspend suspend a subscriber.
