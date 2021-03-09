@@ -1125,6 +1125,7 @@ func (o ListSessionEventsOption) queryString() url.Values {
 // SessionEvent keeps information of session event
 type SessionEvent struct {
 	IMSI        string    `json:"imsi"`
+	UnixTime    int64     `json:"time"`
 	Time        time.Time `json:"createdTime"`
 	OperatorId  string    `json:"operatorId"`
 	Event       string    `json:"event"`
