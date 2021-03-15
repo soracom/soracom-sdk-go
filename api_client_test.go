@@ -983,10 +983,15 @@ func TestSessionEvent(t *testing.T) {
 		// To:    time.Now(),
 		Limit: 1,
 	}
-	result, err := apiClient.ListSessionEvents(imsi, opt)
+	result, pek, err := apiClient.ListSessionEvents(imsi, opt)
 	if err != nil {
 		t.Fatalf("Error occurred on ListSessionEvents: %s", err)
 	}
+
+	if pek != nil {
+		t.Fatal("ListSessionEvents should not contain pagination keys")
+	}
+
 	if len(result) > 0 {
 		t.Logf("found event %d", len(result))
 	}
