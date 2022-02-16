@@ -1106,14 +1106,18 @@ func TestCreateGroup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(g1.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(g1.GroupID)
+	}()
 
 	name := fmt.Sprintf("group-name-for-test-%d", time.Now().Unix())
 	g2, err := apiClient.CreateGroup(Tags{"name": name, "test-tag": "test-value"})
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(g2.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(g2.GroupID)
+	}()
 }
 
 func TestCreateGroupWithName(t *testing.T) {
@@ -1122,7 +1126,9 @@ func TestCreateGroupWithName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 	if group.Tags["name"] != name {
 		t.Fatalf("Created a group with wrong name")
 	}
@@ -1147,7 +1153,9 @@ func TestGetGroup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(groupCreated.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(groupCreated.GroupID)
+	}()
 
 	groupFound, err := apiClient.GetGroup(groupCreated.GroupID)
 	if err != nil {
@@ -1165,7 +1173,9 @@ func TestListSubscribersInGroup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(groupCreated.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(groupCreated.GroupID)
+	}()
 
 	for _, cs := range createdSubscribers {
 		_, err := apiClient.SetSubscriberGroup(cs.IMSI, groupCreated.GroupID)
@@ -1204,7 +1214,9 @@ func TestUpdateGroupConfigurations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	beamTCPConfig := &BeamTCPConfig{
 		Name:                "TCP Config Name 1",
@@ -1250,7 +1262,9 @@ func TestUpdateAirConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	airConfig1 := &AirConfig{
 		UseCustomDNS: true,
@@ -1298,7 +1312,9 @@ func TestUpdateBeamTCPConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	entryPoint1 := "tcp://beam.soracom.io:8023"
 	beamTCPConfig1 := &BeamTCPConfig{
@@ -1328,7 +1344,9 @@ func TestDeleteGroupConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	entryPoint1 := "tcp://beam.soracom.io:8023"
 	beamTCPConfig1 := &BeamTCPConfig{
@@ -1366,7 +1384,9 @@ func TestUpdateGroupTags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	g, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
 		{TagName: "name1", TagValue: "value1"},
@@ -1387,7 +1407,9 @@ func TestDeleteGroupTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGroup() failed: %v", err.Error())
 	}
-	defer apiClient.DeleteGroup(group.GroupID)
+	defer func() {
+		_ = apiClient.DeleteGroup(group.GroupID)
+	}()
 
 	g1, err := apiClient.UpdateGroupTags(group.GroupID, []Tag{
 		{TagName: "name1", TagValue: "value1"},
