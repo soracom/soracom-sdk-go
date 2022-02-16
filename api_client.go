@@ -1,7 +1,9 @@
 package soracom
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -1136,6 +1138,47 @@ func (ac *APIClient) GetSignupToken(email, authKeyID, authKey string) (string, e
 	}
 
 	return token, nil
+}
+
+// InitOperatorForSandbox initializes an operator for sandbox environment.
+// see also: https://developers.soracom.io/en/docs/tools/api-sandbox/
+func (ac *APIClient) InitOperatorForSandbox(email, password, authKeyID, authKey string, registerPaymentMethod bool, coverageTypes []string) (*InitOperatorForSandboxResponse, error) {
+	params := &apiParams{
+		method:      "POST",
+		path:        "/v1/sandbox/init",
+		contentType: "application/json",
+		body: (&InitOperatorForSandboxRequest{
+			Email:                 email,
+			Password:              password,
+			AuthKeyID:             authKeyID,
+			AuthKey:               authKey,
+			RegisterPaymentMethod: registerPaymentMethod,
+			CoverageTypes:         coverageTypes,
+		}).JSON(),
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode < 200 || statusCode >= 300 {
+		return nil, fmt.Errorf("failed to init operator for sandbox; status = %d; %s", statusCode, body)
+	}
+
+	var r InitOperatorForSandboxResponse
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return nil, fmt.Errorf("faile to init operator for sandbox: %w", err)
+	}
+
+	return &r, nil
 }
 
 // CreateSubscriber sends a request to create a brand-new subscriber

@@ -100,6 +100,28 @@ func parseAuthResponse(resp *http.Response) *AuthResponse {
 	return &ar
 }
 
+// InitOperatorForSandboxRequest represents the request body of InitOperatorForSandbox.
+type InitOperatorForSandboxRequest struct {
+	Email                 string   `json:"email"`
+	Password              string   `json:"password"`
+	AuthKeyID             string   `json:"authKeyId"`
+	AuthKey               string   `json:"authKey"`
+	RegisterPaymentMethod bool     `json:"registerPaymentMethod"`
+	CoverageTypes         []string `json:"coverageTypes,omitempty"`
+}
+
+// JSON returns JSON string of InitOperatorForSandboxRequest.
+func (r *InitOperatorForSandboxRequest) JSON() string {
+	return toJSON(r)
+}
+
+// InitOperatorForSandboxResponse represents the response body InitOperatorForSandbox.
+type InitOperatorForSandboxResponse struct {
+	OperatorID string `json:"operatorId"`
+	APIKey     string `json:"apiKey"`
+	Token      string `json:"token"`
+}
+
 type generateAPITokenRequest struct {
 	Timeout int `json:"timeout_seconds"`
 }
