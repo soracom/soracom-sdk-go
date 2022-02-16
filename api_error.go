@@ -23,7 +23,7 @@ type apiErrorResponse struct {
 func parseAPIErrorResponse(resp *http.Response) *apiErrorResponse {
 	var aer apiErrorResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&aer)
+	_ = dec.Decode(&aer)
 	return &aer
 }
 

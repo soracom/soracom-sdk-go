@@ -96,8 +96,30 @@ type AuthResponse struct {
 func parseAuthResponse(resp *http.Response) *AuthResponse {
 	var ar AuthResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&ar)
+	_ = dec.Decode(&ar)
 	return &ar
+}
+
+// InitOperatorForSandboxRequest represents the request body of InitOperatorForSandbox.
+type InitOperatorForSandboxRequest struct {
+	Email                 string   `json:"email"`
+	Password              string   `json:"password"`
+	AuthKeyID             string   `json:"authKeyId"`
+	AuthKey               string   `json:"authKey"`
+	RegisterPaymentMethod bool     `json:"registerPaymentMethod"`
+	CoverageTypes         []string `json:"coverageTypes,omitempty"`
+}
+
+// JSON returns JSON string of InitOperatorForSandboxRequest.
+func (r *InitOperatorForSandboxRequest) JSON() string {
+	return toJSON(r)
+}
+
+// InitOperatorForSandboxResponse represents the response body InitOperatorForSandbox.
+type InitOperatorForSandboxResponse struct {
+	OperatorID string `json:"operatorId"`
+	APIKey     string `json:"apiKey"`
+	Token      string `json:"token"`
 }
 
 type generateAPITokenRequest struct {
@@ -117,7 +139,7 @@ type GenerateAPITokenResponse struct {
 func parseGenerateAPITokenResponse(resp *http.Response) *GenerateAPITokenResponse {
 	var r GenerateAPITokenResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&r)
+	_ = dec.Decode(&r)
 	return &r
 }
 
@@ -138,7 +160,7 @@ type GetSupportTokenResponse struct {
 func parseGetSupportTokenResponse(resp *http.Response) *GetSupportTokenResponse {
 	var r GetSupportTokenResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&r)
+	_ = dec.Decode(&r)
 	return &r
 }
 
@@ -175,7 +197,7 @@ type Operator struct {
 func parseOperator(resp *http.Response) *Operator {
 	var o Operator
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&o)
+	_ = dec.Decode(&o)
 	return &o
 }
 
@@ -332,11 +354,11 @@ func parseLinkHeader(linkHeader string) *PaginationKeys {
 		links := strings.Split(linkHeader, ",")
 		for _, link := range links {
 			s := strings.Split(link, ";")
-			url, err := url.Parse(strings.Trim(s[0], "<>"))
+			u, err := url.Parse(strings.Trim(s[0], "<>"))
 			if err != nil {
 				continue
 			}
-			lek := url.Query()["last_evaluated_key"][0]
+			lek := u.Query()["last_evaluated_key"][0]
 			rel := strings.Split(s[1], "=")[1]
 			if rel == "prev" {
 				pk.Prev = lek
@@ -373,7 +395,7 @@ func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *Paginatio
 		return nil, nil, err
 	}
 
-	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	linkHeader := resp.Header.Get("Link")
 	pk := parseLinkHeader(linkHeader)
 
 	return subs, pk, nil
@@ -382,7 +404,7 @@ func parseListSubscribersResponse(resp *http.Response) ([]Subscriber, *Paginatio
 func parseSubscriber(resp *http.Response) *Subscriber {
 	var sub Subscriber
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&sub)
+	_ = dec.Decode(&sub)
 	return &sub
 }
 
@@ -510,7 +532,7 @@ type AirStats struct {
 func parseAirStats(resp *http.Response) []AirStats {
 	var v []AirStats
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&v)
+	_ = dec.Decode(&v)
 	return v
 }
 
@@ -562,7 +584,7 @@ type BeamStats struct {
 func parseBeamStats(resp *http.Response) []BeamStats {
 	var v []BeamStats
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&v)
+	_ = dec.Decode(&v)
 	return v
 }
 
@@ -588,7 +610,7 @@ type exportAirStatsResponse struct {
 func parseExportAirStatsResponse(resp *http.Response) *exportAirStatsResponse {
 	var r exportAirStatsResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&r)
+	_ = dec.Decode(&r)
 	return &r
 }
 
@@ -609,7 +631,7 @@ type exportBeamStatsResponse struct {
 func parseExportBeamStatsResponse(resp *http.Response) *exportBeamStatsResponse {
 	var r exportBeamStatsResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&r)
+	_ = dec.Decode(&r)
 	return &r
 }
 
@@ -680,7 +702,7 @@ func parseListGroupsResponse(resp *http.Response) ([]Group, *PaginationKeys, err
 		return nil, nil, err
 	}
 
-	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	linkHeader := resp.Header.Get("Link")
 	pk := parseLinkHeader(linkHeader)
 
 	return groups, pk, nil
@@ -697,7 +719,7 @@ func (r *createGroupRequest) JSON() string {
 func parseGroup(resp *http.Response) *Group {
 	var g Group
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&g)
+	_ = dec.Decode(&g)
 	return &g
 }
 
@@ -1147,7 +1169,7 @@ func parseListSessionEvents(resp *http.Response) ([]SessionEvent, *PaginationKey
 		return nil, nil, err
 	}
 
-	linkHeader := resp.Header.Get(http.CanonicalHeaderKey("Link"))
+	linkHeader := resp.Header.Get("Link")
 	pk := parseLinkHeader(linkHeader)
 	return events, pk, err
 }
@@ -1172,7 +1194,7 @@ func tagsToJSON(tags []Tag) string {
 
 func readAll(r io.Reader) string {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	return buf.String()
 }
 
