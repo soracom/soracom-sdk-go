@@ -2,6 +2,8 @@ package soracom
 
 import (
 	"bytes"
+	"io/ioutil"
+	"net/http"
 	"testing"
 )
 
@@ -92,9 +94,15 @@ func TestMarshals(t *testing.T) {
 ]`
 
 		b := bytes.NewBufferString(testdata)
-		rs, err := parseListSessionEvents(b)
+		response := &http.Response{
+			Body: ioutil.NopCloser(b),
+		}
+		rs, pek, err := parseListSessionEvents(response)
 		if err != nil {
 			t.Fatalf("failed to parseListSessionEvents(): %s", err)
+		}
+		if pek != nil {
+			t.Fatal("failed to parseListSessionEvents, should not contain pagination keys")
 		}
 		if len(rs) != 4 {
 			t.Fatalf("result length: want 4 got %d", len(rs))
