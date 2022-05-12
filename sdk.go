@@ -766,6 +766,8 @@ func (ac *AirConfig) JSON() string {
 	return toJSON([]GroupConfig{
 		{Key: "useCustomDns", Value: ac.UseCustomDNS},
 		{Key: "dnsServers", Value: ac.DNSServers},
+		{Key: "metadata", Value: ac.MetaData},
+		{Key: "userdata", Value: ac.UserData},
 	})
 }
 

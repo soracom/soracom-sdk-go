@@ -1272,6 +1272,12 @@ func TestUpdateAirConfig(t *testing.T) {
 			"8.8.8.8",
 			"8.8.4.4",
 		},
+		MetaData: MetaData{
+			Enabled:     true,
+			ReadOnly:    true,
+			AllowOrigin: "http://some.example.com",
+		},
+		UserData: "foobar",
 	}
 
 	g1, err := apiClient.UpdateAirConfig(group.GroupID, airConfig1)
@@ -1285,12 +1291,31 @@ func TestUpdateAirConfig(t *testing.T) {
 	if len(air1["dnsServers"].([]interface{})) != 2 {
 		t.Fatalf("Unexpected value found")
 	}
+	metadata := air1["metadata"].(map[string]interface{})
+	if metadata["enabled"].(bool) != true {
+		t.Fatalf("Unexpected value found")
+	}
+	if metadata["readonly"].(bool) != true {
+		t.Fatalf("Unexpected value found")
+	}
+	if metadata["allowOrigin"].(string) != "http://some.example.com" {
+		t.Fatalf("Unexpected value found")
+	}
+	if air1["userdata"].(string) != "foobar" {
+		t.Fatalf("Unexpected value found")
+	}
 
 	airConfig2 := &AirConfig{
 		UseCustomDNS: false,
 		DNSServers: []string{
 			"0.0.0.0",
 		},
+		MetaData: MetaData{
+			Enabled:     false,
+			ReadOnly:    false,
+			AllowOrigin: "http://any.example.com",
+		},
+		UserData: "helloworld",
 	}
 
 	g2, err := apiClient.UpdateAirConfig(group.GroupID, airConfig2)
@@ -1302,6 +1327,19 @@ func TestUpdateAirConfig(t *testing.T) {
 		t.Fatalf("Unexpected value found")
 	}
 	if len(air2["dnsServers"].([]interface{})) != 1 {
+		t.Fatalf("Unexpected value found")
+	}
+	metadata = air2["metadata"].(map[string]interface{})
+	if metadata["enabled"].(bool) != false {
+		t.Fatalf("Unexpected value found")
+	}
+	if metadata["readonly"].(bool) != false {
+		t.Fatalf("Unexpected value found")
+	}
+	if metadata["allowOrigin"].(string) != "http://any.example.com" {
+		t.Fatalf("Unexpected value found")
+	}
+	if air2["userdata"].(string) != "helloworld" {
 		t.Fatalf("Unexpected value found")
 	}
 }
