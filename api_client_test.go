@@ -1277,7 +1277,9 @@ func TestUpdateAirConfig(t *testing.T) {
 			ReadOnly:    true,
 			AllowOrigin: "http://some.example.com",
 		},
-		UserData: "foobar",
+		UserData:            "foobar",
+		BinaryParserEnabled: true,
+		BinaryParserFormat:  "flag:0:bool:7 temp:1:int:13:/10 humid:3:uint:8:/100 lat::float:32 long:float:32",
 	}
 
 	g1, err := apiClient.UpdateAirConfig(group.GroupID, airConfig1)
@@ -1304,6 +1306,12 @@ func TestUpdateAirConfig(t *testing.T) {
 	if air1["userdata"].(string) != "foobar" {
 		t.Fatalf("Unexpected value found")
 	}
+	if air1["binaryParserEnabled"].(bool) != true {
+		t.Fatalf("Unexpected value found")
+	}
+	if air1["binaryParserFormat"].(string) != "flag:0:bool:7 temp:1:int:13:/10 humid:3:uint:8:/100 lat::float:32 long:float:32" {
+		t.Fatalf("Unexpected value found")
+	}
 
 	airConfig2 := &AirConfig{
 		UseCustomDNS: false,
@@ -1315,7 +1323,9 @@ func TestUpdateAirConfig(t *testing.T) {
 			ReadOnly:    false,
 			AllowOrigin: "http://any.example.com",
 		},
-		UserData: "helloworld",
+		UserData:            "helloworld",
+		BinaryParserEnabled: false,
+		BinaryParserFormat:  "",
 	}
 
 	g2, err := apiClient.UpdateAirConfig(group.GroupID, airConfig2)
@@ -1340,6 +1350,12 @@ func TestUpdateAirConfig(t *testing.T) {
 		t.Fatalf("Unexpected value found")
 	}
 	if air2["userdata"].(string) != "helloworld" {
+		t.Fatalf("Unexpected value found")
+	}
+	if air2["binaryParserEnabled"].(bool) != false {
+		t.Fatalf("Unexpected value found")
+	}
+	if air2["binaryParserFormat"].(string) != "" {
 		t.Fatalf("Unexpected value found")
 	}
 }

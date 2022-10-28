@@ -755,10 +755,12 @@ type MetaData struct {
 
 // AirConfig holds configuration parameters for SORACOM Air
 type AirConfig struct {
-	UseCustomDNS bool     `json:"useCustomDns"`
-	DNSServers   []string `json:"dnsServers"`
-	MetaData     MetaData `json:"metadata"`
-	UserData     string   `json:"userdata"`
+	UseCustomDNS        bool     `json:"useCustomDns"`
+	DNSServers          []string `json:"dnsServers"`
+	MetaData            MetaData `json:"metadata"`
+	UserData            string   `json:"userdata"`
+	BinaryParserEnabled bool     `json:"binaryParserEnabled"`
+	BinaryParserFormat  string   `json:"binaryParserFormat"`
 }
 
 // JSON converts AirConfig into JSON string
@@ -768,6 +770,8 @@ func (ac *AirConfig) JSON() string {
 		{Key: "dnsServers", Value: ac.DNSServers},
 		{Key: "metadata", Value: ac.MetaData},
 		{Key: "userdata", Value: ac.UserData},
+		{Key: "binaryParserEnabled", Value: ac.BinaryParserEnabled},
+		{Key: "binaryParserFormat", Value: ac.BinaryParserFormat},
 	})
 }
 
