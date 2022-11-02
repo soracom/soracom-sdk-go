@@ -2,14 +2,14 @@ package soracom
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
 )
 
 func TestTextPlainApiError(t *testing.T) {
-	r := ioutil.NopCloser(strings.NewReader("test"))
+	r := io.NopCloser(strings.NewReader("test"))
 	h := http.Header{}
 	h.Set("Content-Type", "text/plain")
 	res := &http.Response{
@@ -30,7 +30,7 @@ func TestTextPlainApiError(t *testing.T) {
 
 func TestJsonClientApiError(t *testing.T) {
 	json := `{"code":"SEM0095"}`
-	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	r := io.NopCloser(bytes.NewReader([]byte(json)))
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	res := &http.Response{
@@ -51,7 +51,7 @@ func TestJsonClientApiError(t *testing.T) {
 
 func TestJsonServerApiError(t *testing.T) {
 	json := `{}`
-	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	r := io.NopCloser(bytes.NewReader([]byte(json)))
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	res := &http.Response{
