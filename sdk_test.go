@@ -2,7 +2,7 @@ package soracom
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 )
@@ -95,7 +95,7 @@ func TestMarshals(t *testing.T) {
 
 		b := bytes.NewBufferString(testdata)
 		response := &http.Response{
-			Body: ioutil.NopCloser(b),
+			Body: io.NopCloser(b),
 		}
 		rs, pek, err := parseListSessionEvents(response)
 		if err != nil {
