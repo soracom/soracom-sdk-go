@@ -34,7 +34,6 @@ func TestMain(m *testing.M) {
 }
 
 func setup() error {
-	rand.Seed(time.Now().Unix())
 	apiClient = setupAPIClient()
 	if os.Getenv("SORACOM_VERBOSE") != "" {
 		apiClient.SetVerbose(true)

@@ -1,29 +1,22 @@
-
+.PHONY: setup
 setup:
 	go get .
 
+.PHONY: lint
 lint:
-	golint ./... \
-		| grep -v 'struct field ResourceUrl should be ResourceURL' \
-		| grep -v 'struct field AccessKeyId should be AccessKeyID' \
-		| grep -v 'struct field OperatorId should be OperatorID' \
-		| grep . ; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ]; then exit 1; fi
+	staticcheck ./...
 
+.PHONY: test
 test:
 	go vet ./...
 	go test -v -race -p=1 ./...
 
+.PHONY: fmt
 fmt:
 	gofmt -w -s .
 	goimports -w .
 
+.PHONY: fmt-check
 fmt-check:
-	gofmt -l -s . | grep [^*][.]go$$; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ]; then exit 1; fi; \
-	goimports -l . | grep [^*][.]go$$; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ]; then exit 1; fi
-
+	gofmt -l -s .
+	goimports -l .
