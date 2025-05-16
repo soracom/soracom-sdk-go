@@ -335,10 +335,17 @@ type Subscriber struct {
 	Plan               int             `json:"plan"`
 	SerialNumber       string          `json:"serialNumber"`
 	SessionStatus      *SessionStatus  `json:"sessionStatus"`
+	SimID              string          `json:"simId"`
 	SpeedClass         string          `json:"speedClass"`
 	Status             string          `json:"status"`
 	Tags               Tags            `json:"tags"`
 	TerminationEnabled bool            `json:"terminationEnabled"`
+}
+
+// Sim represents a SIM resource in the SORACOM platform.
+type Sim struct {
+	SimID         string         `json:"simId"`
+	SessionStatus *SessionStatus `json:"sessionStatus"`
 }
 
 // PaginationKeys holds keys for pagination
@@ -406,6 +413,13 @@ func parseSubscriber(resp *http.Response) *Subscriber {
 	dec := json.NewDecoder(resp.Body)
 	_ = dec.Decode(&sub)
 	return &sub
+}
+
+func parseSim(resp *http.Response) *Sim {
+	var sim Sim
+	dec := json.NewDecoder(resp.Body)
+	_ = dec.Decode(&sim)
+	return &sim
 }
 
 type updateSpeedClassRequest struct {

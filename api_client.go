@@ -620,6 +620,24 @@ func (ac *APIClient) DeleteSubscriberTag(imsi string, tagName string) error {
 	return nil
 }
 
+// GetSim gets information about a SIM specified by simID.
+func (ac *APIClient) GetSim(simID string) (*Sim, error) {
+	params := &apiParams{
+		method: "GET",
+		path:   "/v1/sims/" + simID,
+	}
+
+	resp, err := ac.callAPI(params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	sim := parseSim(resp)
+
+	return sim, nil
+}
+
 // GetAirStats gets stats of Air for a subscriber for a specified period
 func (ac *APIClient) GetAirStats(imsi string, from, to time.Time, period StatsPeriod) ([]AirStats, error) {
 	params := &apiParams{
