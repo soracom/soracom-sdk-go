@@ -317,6 +317,15 @@ type SessionStatus struct {
 	UEIPAddress   string          `json:"ueIpAddress"`
 }
 
+type PreviousSessionStatus struct {
+	Cell        *Cell           `json:"cell"`
+	CreatedTime *TimestampMilli `json:"createdTime"`
+	DeletedTime *TimestampMilli `json:"deletedTime"`
+	DNSServers  []string        `json:"dnsServers"`
+	IMEI        string          `json:"imei"`
+	UEIPAddress string          `json:"ueIpAddress"`
+}
+
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
 	APN                string          `json:"apn"`
@@ -333,6 +342,7 @@ type Subscriber struct {
 	MSISDN             string          `json:"msisdn"`
 	OperatorID         string          `json:"operatorId"`
 	Plan               int             `json:"plan"`
+	PreviousSession    *SessionStatus  `json:"previousSession"`
 	SerialNumber       string          `json:"serialNumber"`
 	SessionStatus      *SessionStatus  `json:"sessionStatus"`
 	SpeedClass         string          `json:"speedClass"`
