@@ -328,27 +328,27 @@ type PreviousSessionStatus struct {
 
 // Subscriber keeps information about a subscriber
 type Subscriber struct {
-	APN                string          `json:"apn"`
-	CreatedAt          *TimestampMilli `json:"createdAt"`
-	ExpiredAt          *TimestampMilli `json:"expiredAt"`
-	ExpiryAction       *string         `json:"expiryAction,omitempty"`
-	GroupID            *string         `json:"groupId,omitempty"`
-	ICCID              string          `json:"iccid,omitempty"`
-	IMEILock           *IMEILock       `json:"imeiLock,omitempty"`
-	IMSI               string          `json:"imsi"`
-	IPAddress          *string         `json:"ipAddress,omitempty"`
-	LastModifiedAt     *TimestampMilli `json:"lastModifiedAt"`
-	ModuleType         string          `json:"ModuleType"`
-	MSISDN             string          `json:"msisdn"`
-	OperatorID         string          `json:"operatorId"`
-	Plan               int             `json:"plan"`
-	PreviousSession    *SessionStatus  `json:"previousSession"`
-	SerialNumber       string          `json:"serialNumber"`
-	SessionStatus      *SessionStatus  `json:"sessionStatus"`
-	SpeedClass         string          `json:"speedClass"`
-	Status             string          `json:"status"`
-	Tags               Tags            `json:"tags"`
-	TerminationEnabled bool            `json:"terminationEnabled"`
+	APN                string                 `json:"apn"`
+	CreatedAt          *TimestampMilli        `json:"createdAt"`
+	ExpiredAt          *TimestampMilli        `json:"expiredAt"`
+	ExpiryAction       *string                `json:"expiryAction,omitempty"`
+	GroupID            *string                `json:"groupId,omitempty"`
+	ICCID              string                 `json:"iccid,omitempty"`
+	IMEILock           *IMEILock              `json:"imeiLock,omitempty"`
+	IMSI               string                 `json:"imsi"`
+	IPAddress          *string                `json:"ipAddress,omitempty"`
+	LastModifiedAt     *TimestampMilli        `json:"lastModifiedAt"`
+	ModuleType         string                 `json:"ModuleType"`
+	MSISDN             string                 `json:"msisdn"`
+	OperatorID         string                 `json:"operatorId"`
+	Plan               int                    `json:"plan"`
+	PreviousSession    *PreviousSessionStatus `json:"previousSession"`
+	SerialNumber       string                 `json:"serialNumber"`
+	SessionStatus      *SessionStatus         `json:"sessionStatus"`
+	SpeedClass         string                 `json:"speedClass"`
+	Status             string                 `json:"status"`
+	Tags               Tags                   `json:"tags"`
+	TerminationEnabled bool                   `json:"terminationEnabled"`
 }
 
 // PaginationKeys holds keys for pagination
