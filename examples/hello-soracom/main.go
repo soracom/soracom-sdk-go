@@ -38,6 +38,14 @@ func main() {
 		return
 	}
 
-	pp.Print(subscribers)
-	pp.Print(lek)
+	_, err = pp.Print(subscribers)
+	if err != nil {
+		fmt.Printf("pp.Print err: %v\n", err.Error())
+		return
+	}
+	_, err = pp.Print(lek)
+	if err != nil {
+		fmt.Printf("pp.Print err: %v\n", err.Error())
+		return
+	}
 }

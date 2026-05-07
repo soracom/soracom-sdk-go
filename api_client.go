@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -90,7 +91,12 @@ func (ac *APIClient) callAPI(params *apiParams) (*http.Response, error) {
 	}
 
 	if res.StatusCode >= http.StatusBadRequest {
-		defer res.Body.Close()
+		defer func() {
+			err := res.Body.Close()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+			}
+		}()
 		return nil, NewAPIError(res)
 	}
 
@@ -133,7 +139,12 @@ func (ac *APIClient) auth(body *AuthRequest) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	respBody := parseAuthResponse(resp)
 	ac.APIKey = respBody.APIKey
@@ -155,7 +166,12 @@ func (ac *APIClient) GenerateAPIToken(timeout int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	respBody := parseGenerateAPITokenResponse(resp)
 	return respBody.Token, nil
@@ -173,7 +189,12 @@ func (ac *APIClient) UpdatePassword(currentPassword, newPassword string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -190,7 +211,12 @@ func (ac *APIClient) GetSupportToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	respBody := parseGetSupportTokenResponse(resp)
 	return respBody.Token, nil
@@ -214,7 +240,12 @@ func (ac *APIClient) CreateOperatorWithRequest(req CreateOperatorRequest) error 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -231,7 +262,12 @@ func (ac *APIClient) VerifyOperator(token string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -247,7 +283,12 @@ func (ac *APIClient) GetOperator(operatorID string) (*Operator, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	operator := parseOperator(resp)
 
@@ -268,7 +309,12 @@ func (ac *APIClient) ListSubscribers(options *ListSubscribersOptions) ([]Subscri
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscribers, paginationKeys, err := parseListSubscribersResponse(resp)
 	if err != nil {
@@ -291,7 +337,12 @@ func (ac *APIClient) RegisterSubscriber(imsi string, regOptions RegisterSubscrib
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -309,7 +360,12 @@ func (ac *APIClient) GetSubscriber(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -329,7 +385,12 @@ func (ac *APIClient) UpdateSubscriberSpeedClass(imsi, speedClass string) (*Subsc
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -349,7 +410,12 @@ func (ac *APIClient) ActivateSubscriber(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -369,7 +435,12 @@ func (ac *APIClient) DeactivateSubscriber(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -389,7 +460,12 @@ func (ac *APIClient) TerminateSubscriber(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -409,7 +485,12 @@ func (ac *APIClient) EnableSubscriberTermination(imsi string) (*Subscriber, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -429,7 +510,12 @@ func (ac *APIClient) DisableSubscriberTermination(imsi string) (*Subscriber, err
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -450,7 +536,12 @@ func (ac *APIClient) ListSessionEvents(imsi string, options *ListSessionEventsOp
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	sessionEvents, paginationKeys, err := parseListSessionEvents(resp)
 	if err != nil {
@@ -473,7 +564,12 @@ func (ac *APIClient) Suspend(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -493,7 +589,12 @@ func (ac *APIClient) SetToStandby(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -517,7 +618,12 @@ func (ac *APIClient) SetSubscriberExpiredAt(imsi string, expiryTime time.Time) (
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -537,7 +643,12 @@ func (ac *APIClient) UnsetSubscriberExpiredAt(imsi string) (*Subscriber, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -557,7 +668,12 @@ func (ac *APIClient) SetSubscriberGroup(imsi, groupID string) (*Subscriber, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -577,7 +693,12 @@ func (ac *APIClient) UnsetSubscriberGroup(imsi string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -597,7 +718,12 @@ func (ac *APIClient) PutSubscriberTags(imsi string, tags []Tag) (*Subscriber, er
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -615,7 +741,12 @@ func (ac *APIClient) DeleteSubscriberTag(imsi string, tagName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -631,7 +762,12 @@ func (ac *APIClient) GetAirStats(imsi string, from, to time.Time, period StatsPe
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	airStats := parseAirStats(resp)
 
@@ -649,7 +785,12 @@ func (ac *APIClient) GetBeamStats(imsi string, from, to time.Time, period StatsP
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	beamStats := parseBeamStats(resp)
 
@@ -673,7 +814,12 @@ func (ac *APIClient) ExportAirStats(from, to time.Time, period StatsPeriod) (*ur
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	respBody := parseExportAirStatsResponse(resp)
 	url, err := url.Parse(respBody.URL)
@@ -701,7 +847,12 @@ func (ac *APIClient) ExportBeamStats(from, to time.Time, period StatsPeriod) (*u
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	respBody := parseExportBeamStatsResponse(resp)
 	url, err := url.Parse(respBody.URL)
@@ -726,7 +877,12 @@ func (ac *APIClient) ListGroups(options *ListGroupsOptions) ([]Group, *Paginatio
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	groups, paginationKeys, err := parseListGroupsResponse(resp)
 	if err != nil {
@@ -751,7 +907,12 @@ func (ac *APIClient) CreateGroup(tags Tags) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -773,7 +934,12 @@ func (ac *APIClient) CreateGroupWithName(name string) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -793,7 +959,12 @@ func (ac *APIClient) DeleteGroup(groupID string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -809,7 +980,12 @@ func (ac *APIClient) GetGroup(groupID string) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -830,7 +1006,12 @@ func (ac *APIClient) ListSubscribersInGroup(groupID string, options *ListSubscri
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscribers, paginationKeys, err := parseListSubscribersResponse(resp)
 	if err != nil {
@@ -853,7 +1034,12 @@ func (ac *APIClient) UpdateGroupConfigurations(groupID, namespace string, config
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -873,7 +1059,12 @@ func (ac *APIClient) UpdateAirConfig(groupID string, airConfig *AirConfig) (*Gro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -895,7 +1086,12 @@ func (ac *APIClient) UpdateBeamTCPConfig(groupID, entryPoint string, beamTCPConf
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -913,7 +1109,12 @@ func (ac *APIClient) DeleteGroupConfiguration(groupID, namespace, name string) (
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -933,7 +1134,12 @@ func (ac *APIClient) UpdateGroupTags(groupID string, tags []Tag) (*Group, error)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	group := parseGroup(resp)
 
@@ -951,7 +1157,12 @@ func (ac *APIClient) DeleteGroupTag(groupID, tagName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -970,7 +1181,12 @@ func (ac *APIClient) ListEventHandlers(options *ListEventHandlersOptions) ([]Eve
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	eventHandlers, err := parseListEventHandlersResponse(resp)
 	if err != nil {
@@ -993,7 +1209,12 @@ func (ac *APIClient) CreateEventHandler(options *CreateEventHandlerOptions) (*Ev
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	eventHandler, err := parseEventHandler(resp)
 	if err != nil {
@@ -1014,7 +1235,12 @@ func (ac *APIClient) ListEventHandlersForSubscriber(imsi string) ([]EventHandler
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	eventHandlers, err := parseListEventHandlersResponse(resp)
 	if err != nil {
@@ -1035,7 +1261,12 @@ func (ac *APIClient) DeleteEventHandler(handlerID string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1051,7 +1282,12 @@ func (ac *APIClient) GetEventHandler(handlerID string) (*EventHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	eventHandler, err := parseEventHandler(resp)
 	if err != nil {
@@ -1073,7 +1309,12 @@ func (ac *APIClient) UpdateEventHandler(eh *EventHandler) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1091,7 +1332,12 @@ func (ac *APIClient) RegisterPaymentMethodWebPay(wp *PaymentMethodInfoWebPay) er
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1109,7 +1355,12 @@ func (ac *APIClient) RegisterPaymentMethodPayJP(pm *PaymentMethodInfoPayJP) erro
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1130,7 +1381,12 @@ func (ac *APIClient) GetSignupToken(email, authKeyID, authKey string) (string, e
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	token, err := parseSignupToken(resp)
 	if err != nil {
@@ -1161,7 +1417,12 @@ func (ac *APIClient) InitOperatorForSandbox(email, password, authKeyID, authKey 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -1194,7 +1455,12 @@ func (ac *APIClient) CreateSubscriber() (*CreatedSubscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	cs, err := parseCreatedSubscriber(resp)
 	if err != nil {
@@ -1217,7 +1483,12 @@ func (ac *APIClient) InsertAirStats(imsi string, stats AirStats) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1235,7 +1506,12 @@ func (ac *APIClient) InsertBeamStats(imsi string, stats BeamStats) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1251,7 +1527,12 @@ func (ac *APIClient) DeleteSandboxOperator() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -1272,7 +1553,12 @@ func (ac *APIClient) CreateCoupon(options *CreatedCouponOptions) (*CreatedCoupon
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	cc, err := parseCreatedCoupon(resp)
 	if err != nil {
@@ -1298,7 +1584,12 @@ func (ac *APIClient) CreateCredentialWithName(name string, options *CredentialOp
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	cc, err := parseCreatedCredential(resp)
 	if err != nil {

@@ -34,7 +34,6 @@ func TestMain(m *testing.M) {
 }
 
 func setup() error {
-	rand.Seed(time.Now().Unix())
 	apiClient = setupAPIClient()
 	if os.Getenv("SORACOM_VERBOSE") != "" {
 		apiClient.SetVerbose(true)
@@ -1189,7 +1188,7 @@ func TestListSubscribersInGroup(t *testing.T) {
 		t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
 	}
 	if len(subs) != len(createdSubscribers) {
-		t.Fatalf("All subscribers should be in group %s: %v", groupCreated.GroupID, err.Error())
+		t.Fatalf("All subscribers should be in group %s", groupCreated.GroupID)
 	}
 
 	for _, cs := range createdSubscribers {
@@ -1204,7 +1203,7 @@ func TestListSubscribersInGroup(t *testing.T) {
 		t.Fatalf("ListSubscribersInGroup() failed: %v", err.Error())
 	}
 	if len(subs) != 0 {
-		t.Fatalf("No subscribers should be in group %s: %v", groupCreated.GroupID, err.Error())
+		t.Fatalf("No subscribers should be in group %s", groupCreated.GroupID)
 	}
 }
 
