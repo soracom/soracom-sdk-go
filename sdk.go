@@ -34,7 +34,7 @@ type TimestampMilli struct {
 
 // MarshalJSON is ...
 func (t *TimestampMilli) MarshalJSON() ([]byte, error) {
-	ts := t.Time.UnixNano() / (1000 * 1000)
+	ts := t.UnixNano() / (1000 * 1000)
 	stamp := fmt.Sprint(ts)
 
 	return []byte(stamp), nil
@@ -57,7 +57,7 @@ func (t *TimestampMilli) UnmarshalJSON(b []byte) error {
 
 // UnixMilli returns t as a Unix time, the number of milliseconds elapsed since January 1, 1970 UTC.
 func (t *TimestampMilli) UnixMilli() int64 {
-	ns := t.Time.UnixNano()
+	ns := t.UnixNano()
 	return ns / (1000 * 1000)
 }
 
@@ -360,9 +360,10 @@ func parseLinkHeader(linkHeader string) *PaginationKeys {
 			}
 			lek := u.Query()["last_evaluated_key"][0]
 			rel := strings.Split(s[1], "=")[1]
-			if rel == "prev" {
+			switch rel {
+			case "prev":
 				pk.Prev = lek
-			} else if rel == "next" {
+			case "next":
 				pk.Next = lek
 			}
 		}

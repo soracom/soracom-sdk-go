@@ -3,6 +3,7 @@ package soracom
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -74,7 +75,12 @@ func (mc *MetadataClient) callAPI(params *apiParams) (*http.Response, error) {
 	}
 
 	if res.StatusCode >= http.StatusBadRequest {
-		defer res.Body.Close()
+		defer func() {
+			err := res.Body.Close()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+			}
+		}()
 		return nil, NewAPIError(res)
 	}
 
@@ -91,7 +97,12 @@ func (mc *MetadataClient) GetSubscriber() (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -111,7 +122,12 @@ func (mc *MetadataClient) UpdateSpeedClass(speedClass string) (*Subscriber, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -131,7 +147,12 @@ func (mc *MetadataClient) EnableTermination() (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -151,7 +172,12 @@ func (mc *MetadataClient) DisableTermination() (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -175,7 +201,12 @@ func (mc *MetadataClient) SetExpiredAt(expiryTime time.Time) (*Subscriber, error
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -195,7 +226,12 @@ func (mc *MetadataClient) UnsetExpiredAt() (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -215,7 +251,12 @@ func (mc *MetadataClient) SetGroup(groupID string) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -235,7 +276,12 @@ func (mc *MetadataClient) UnsetGroup() (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -255,7 +301,12 @@ func (mc *MetadataClient) PutTags(tags []Tag) (*Subscriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	subscriber := parseSubscriber(resp)
 
@@ -272,7 +323,12 @@ func (mc *MetadataClient) DeleteTag(tagName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -287,7 +343,12 @@ func (mc *MetadataClient) GetUserdata() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+		}
+	}()
 
 	return readAll(resp.Body), nil
 }
